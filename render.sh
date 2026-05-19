@@ -16,6 +16,18 @@ usage() {
 die() { echo "Error: $*" >&2; usage; exit 1; }
 [[ $# -eq 0 ]] && { usage; exit 1; }
 
+QUARTO=$(command -v quarto || true)
+if [[ -z $QUARTO ]]; then
+  for c in \
+    "/Applications/RStudio.app/Contents/Resources/app/quarto/bin/quarto" \
+    "/Applications/quarto/bin/quarto" \
+    "/usr/local/bin/quarto" \
+    "/opt/homebrew/bin/quarto"; do
+    [[ -x $c ]] && { QUARTO=$c; break; }
+  done
+fi
+[[ -z $QUARTO ]] && die "quarto not found on PATH or in known locations"
+
 types=() labs=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -26,16 +38,18 @@ while [[ $# -gt 0 ]]; do
 done
 [[ ${#types[@]} -eq 0 ]] && die "--type needs at least one value"
 
-valid_or_die() { local v=$1; shift; local -n arr=$1;
-  [[ " ${arr[*]} " == *" $v "* ]] || die "Invalid value $v"
+valid_or_die() { local v=$1; shift
+  [[ " $* " == *" $v "* ]] || die "Invalid value $v"
 }
-expand() { local -n ref=$1 full=$2
-  [[ ${ref[*]} == *all* ]] && ref=("${full[@]}")
-  for v in "${ref[@]}"; do valid_or_die "$v" full; done
+expand() { local name=$1; shift; local full=("$@") cur v
+  eval "cur=(\"\${${name}[@]}\")"
+  [[ " ${cur[*]} " == *" all "* ]] && cur=("${full[@]}")
+  for v in "${cur[@]}"; do valid_or_die "$v" "${full[@]}"; done
+  eval "${name}=(\"\${cur[@]}\")"
 }
-expand types ALL_TYPES
+expand types "${ALL_TYPES[@]}"
 [[ ${#labs[@]} -eq 0 ]] && labs=("${ALL_LABS[@]}")
-expand labs ALL_LABS
+expand labs "${ALL_LABS[@]}"
 
 render() {
   local qmd=$1
@@ -45,9 +59,9 @@ render() {
 
   echo "Rendering $qmd ($type)"
   case $type in
-    solved)     quarto render "$qmd" -P answers:true ;;
-    simplified) quarto render "$qmd" -P simplified:true ;;
-    default)    quarto render "$qmd" ;;
+    solved)     "$QUARTO" render "$qmd" -P answers:true ;;
+    simplified) "$QUARTO" render "$qmd" -P simplified:true ;;
+    default)    "$QUARTO" render "$qmd" ;;
   esac
 
   [[ -f $html ]] || die "Render failed: $html not found"

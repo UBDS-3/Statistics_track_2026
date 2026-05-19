@@ -1,5 +1,4 @@
 # UBDS3-2025 Statistics source
-If you are a student, who was very curious - well done smart ass, you have all the solutions, but please keep it as our secret :)
 
 This repository contains teaching material for the R statistical course of the Ukrainian Biological Data Science Summer School 2025.
 
@@ -32,6 +31,35 @@ cp .githooks/post-commit .git/hooks/
 ### Render.sh script
 
 The script `render.sh` can be used for batch processing multiple sources, it required `quarto-cli` binaries installed and a path to your `R_HOME` (see below). For usage run `./render.sh`.
+
+#### Usage
+
+```bash
+./render.sh --type <type|all> [--lab <labs|all>]
+```
+
+* `--type`: one or more of `solved` `simplified` `default` (or `all`)
+* `--lab`: one or more of `testing` `exploratory` `clustering` `omics` `ML` `regression` `randomness` `multivariate` (or `all`); defaults to all labs if omitted
+
+Examples:
+
+```bash
+./render.sh --type solved --lab multivariate     # one type, one lab
+./render.sh --type solved simplified --lab ML regression
+./render.sh --type all --lab all                 # render everything
+```
+
+Rendered output is written next to each `.qmd` (e.g. `labs/multivariate/multivariate.solved.html`). The `exploratory` and `randomness` labs are always rendered as `default` only.
+
+#### Prerequisites
+
+* **bash** — the script runs on stock macOS bash 3.2 as well as newer bash.
+* **quarto** — must be installed. If it is not found, install [quarto-cli](https://quarto.org/docs/get-started/) or add it to your `PATH`.
+* **R packages** — each lab loads its own packages via `library()`; a missing one fails the render with `there is no package called '<pkg>'`. Install the reported package and re-run, e.g.:
+
+  ```r
+  install.packages(c("GGally", "ade4", "factoextra"))
+  ```
 
 Hook can automate source rendering with setting env variable, i.e.
 
