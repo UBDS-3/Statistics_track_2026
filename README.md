@@ -4,7 +4,7 @@ This repository contains teaching material for the R statistical course of the U
 
 ## Contents
 
-* [Setup](labs/00-setup/setup.html)
+* [Setup](labs/00-setup)
 * [Exploratory Data Analysis](labs/exploratory/exploratory.html)
 * [Data and Randomness](labs/randomness/randomness.html)
 * [Regression](labs/regression/regression.html)
