@@ -5,14 +5,14 @@ This repository contains teaching material for the R statistical course of the U
 ## Contents
 
 * [Setup](labs/00-setup)
-* [Exploratory Data Analysis](labs/exploratory/exploratory.html)
-* [Data and Randomness](labs/randomness/randomness.html)
-* [Regression](labs/regression/regression.html)
-* [Omics](labs/omics/omics.html)
-* [Hypothesis testing](labs/testing/testing.html)
-* [Clustering analysis](labs/clustering/clustering.html)
-* [Multivariate analysis](labs/multivariate/multivariate.html)
-* [Machine Learning](labs/ML/ML.html)
+* [Exploratory Data Analysis](labs/exploratory)
+* [Data and Randomness](labs/randomness)
+* [Regression](labs/regression)
+* [Omics](labs/omics)
+* [Hypothesis testing](labs/testing)
+* [Clustering analysis](labs/clustering)
+* [Multivariate analysis](labs/multivariate)
+* [Machine Learning](labs/ML)
 
 
 ## For faculty members
