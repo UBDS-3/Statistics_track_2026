@@ -1,4 +1,4 @@
-# UBDS3-2025 Statistics source
+# UBDS3-2026 Statistics track
 
 This repository contains teaching material for the R statistical course of the Ukrainian Biological Data Science Summer School 2026.
 
