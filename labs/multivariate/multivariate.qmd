@@ -1,7 +1,7 @@
 ---
 title: "Multivariate Analysis"
-author: "Bio Data Science^3 faculty"
-date: "July 19 - August 2, 2025"
+author: "Helena L. Crowell and Wolfgang Huber"
+date: "13 July 2026"
 format:
   html:
     code-fold: false
@@ -11,9 +11,7 @@ format:
     toc: true
     code-line-numbers: false
 params:
-  answers:    false
-  simplified: false
-  sessioninfo: false
+  include_answers: true
 ---
 
 ```{r}
@@ -22,13 +20,16 @@ params:
 #| include: FALSE
 options("scipen"=100, "digits"=4)
 knitr::opts_chunk$set(
-    eval  = params$answers,
-    echo  = params$answers,
-    message = FALSE,
-    warning = FALSE,
-    fig.width=6, fig.height=4, fig.align="center", fig.pos="h"
+    eval  = params$include_answers,
+    echo  = params$include_answers,
+    cache = TRUE,
+    autodep = TRUE,
+    fig.width = 6,
+    fig.height = 4,
+    fig.align = "center",
+    fig.pos = "h"
 )
-set.seed(533)
+set.seed(0xdada)
 ```
 
 # Goal
@@ -95,7 +96,7 @@ Let's first get to know our data sets.
 #| fig-height: 4
 #| out-width: "60%"
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #1
@@ -140,6 +141,8 @@ dplyr::______(athletes,
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "60%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 
 #1
 nrow(athletes)
@@ -197,7 +200,7 @@ ggpairs(turtles[, -1], axisLabels = "none")
 ```{r}
 #| label: questions6-7Hint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #2
@@ -213,6 +216,8 @@ _______(________, axisLabels = "none")
 #| fig-width: 8
 #| fig-height: 8
 #| out-width: "100%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 
 #1
 # Diagonal: histogram displaying the distribution of the different variables.
@@ -225,7 +230,7 @@ ggpairs(athletes, axisLabels = "none")
 ```{r}
 #| label: questions8Hint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #3
@@ -243,6 +248,9 @@ ________(___(________), cellwidth = 20, cellheight = 20,
 #| fig-width: 5
 #| fig-height: 5
 #| out-width: "60%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
+
 #3
 library("pheatmap")
 mycolors = colorRampPalette(c("#FFD800", "#0056B9"))(100)
@@ -273,7 +281,7 @@ head(scaledTurtles)
 ```{r}
 #| label: questions9Hint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 _____(turtles[____],       _, __)
@@ -286,6 +294,8 @@ _____(turtles[____],       _, ____)
 
 ```{r}
 #| label: questions9Solution
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 apply(turtles[, -1],       2, sd)
 apply(scaledTurtles[, -1], 2, sd)
 apply(turtles[, -1],       2, mean)
@@ -352,7 +362,7 @@ Now try to do the following:
 ```{r}
 #| label: questions10-11Hint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #1
@@ -370,6 +380,8 @@ __(scaledathletes$____)
 
 ```{r}
 #| label: questions10-11Solution
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 
 #1
 sd(scaledathletes$weight)
@@ -434,7 +446,7 @@ Can you regress `weight` on `discs` and generate a similar plot?
 ```{r}
 #| label: questionsReg1Hint1
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #1
@@ -463,6 +475,8 @@ newline + geom_segment(
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "80%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 #1
 reg2 = lm(weight ~ disc, data = scaledathletes)
 
@@ -491,6 +505,7 @@ Can you create a plot that shows all points, as well as both regression lines, i
 
 ```{r}
 #| label: questionsReg1Solution2
+#| eval: !expr params$include_answers
 #| echo: false
 #| results: 'asis'
 cat("We plot the data such that the $x$-axis is `disc` and the $y$-axis is `weight`. So we can directly use the intercept and slope parameters from the first regression, `reg1`. For the second regression, `reg2`, we invert
@@ -503,7 +518,7 @@ x&=-\\frac{a}{b}+\\frac{1}{b}y
 ```{r}
 #| label: questionsReg1Hint3
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 ggplot(scaledathletes, aes(x = ____, y = ______)) + geom_point(shape = 1) +
@@ -520,6 +535,8 @@ ggplot(scaledathletes, aes(x = ____, y = ______)) + geom_point(shape = 1) +
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "80%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 ggplot(scaledathletes, aes(x = disc, y = weight)) + geom_point(shape = 1) +
   coord_fixed() +
   geom_abline(intercept =     a1, slope =   b1, col = "#0056B9") +
@@ -567,7 +584,7 @@ To start we will come back to the turtles data set. First, we need to make sure 
 ```{r}
 #| label: questionsTurtleHint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #1
@@ -591,6 +608,8 @@ ________(corrs, cellwidth = 40, cellheight = 40, color = mycolors)
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "60%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 #1
 apply(turtles[, -1], 2, mean)
 apply(turtles[, -1], 2, sd)
@@ -653,7 +672,7 @@ How can you obtain this value from the pca1 object?
 ```{r}
 #| label: questionsSummaryPcaturtleHint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #1
@@ -669,6 +688,8 @@ Your idea here
 
 ```{r}
 #| label: questionsSummaryPcaturtleSolution
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 #1
 summary(pca1)
 
@@ -699,7 +720,7 @@ fviz_pca_biplot(pca1, label = "var")
 ```{r}
 #| label: questionsFvizPcaBiplotTurtlesHint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #6
@@ -714,6 +735,8 @@ Your idea here
 
 ```{r}
 #| label: questionsFvizPcaBiplotTurtlesSolution
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "60%"
@@ -754,10 +777,10 @@ together with the variables in a biplot?
 4. Can you plot the numbers of the athletes onto the samples.
 What do you notice about the numbers?
 
-```{r }
+```{r}
 #| label: questionsAthletetsHint
 #| eval: false
-#| echo: !expr params$simplified
+#| echo: true
 # Fill in the blanks to complete the code and answer the question above
 
 #1
@@ -782,6 +805,8 @@ ____________(_______) + ggtitle("") + ylim(c(____, ___))
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "60%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
 
 #1
 fviz_eig(pca.ath, geom = "bar", bar_width = 0.3) + ggtitle("")
@@ -800,7 +825,5 @@ fviz_pca_ind(pca.ath) + ggtitle("") + ylim(c(-2.5, 5.7))
 
 ```{r}
 #| label: sessionInfo
-#| eval: !expr params$sessioninfo
-#| echo: !expr params$sessioninfo
 sessionInfo()
 ```
