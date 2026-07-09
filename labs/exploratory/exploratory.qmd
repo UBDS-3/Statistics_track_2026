@@ -76,34 +76,20 @@ I have downloaded a few of these files and made small versions of them in this g
 
 ### Reading in data
 
-Let's start by reading in the counts matrix. Here I use the basic `read.delim()` function to read in a matrix of data, and then convert to something called a "tibble". Two packages used here:
+Let's start by reading in the counts matrix. Two packages used here:
 
-1.  *tibble* for storing the information
+1.  *readr* for reading in the files
 2.  *here* for referring to local files
 
 ```{r}
 #| message: false
-library(tibble)
+library(readr)
 library(here)
-# this file has no column name for first column (these are e.g. row names)
-counts <- read.delim(here("exploratory/counts.txt.gz"))
-counts <- counts |> 
-  rownames_to_column("peak") |>
-  as_tibble()
+counts <- read_delim(here("exploratory/counts.txt.gz"))
 counts
 ```
 
 The last line prints the tibble to the console which shows the first 10 rows in this case, and then states the remaining number of rows. We see a selection of the columns, which are samples.
-
-Some brief terminology: "peaks" refers to regions of the genome. They are called "peaks" because the raw data from the experiment looks like a peak of a mountain when visualized, because the observations of openness stack on top of each other. We will continue with the domain-specific work "peak" but when you see this word you can just think "region of the genome".
-
-A quick note on `tibble` vs `data.frame`, these are often equivalent. Tibble is used often with packages such as *dplyr*, and has more convenient display in my opinion. Anther detail is that the tibble cannot have row names, only column names.
-
-```{r}
-test_dat <- tibble(foo = c("a","b","c"), bar = c(-1.1, 2.0, 10.56))
-test_dat
-test_dat |> as.data.frame()
-```
 
 ```{r}
 library(readr)
@@ -133,14 +119,11 @@ We can use the `glimpse()` function from the *dplyr* package for quick summaries
 ```{r}
 #| message: false
 library(dplyr)
+peaks <- peaks |> rename(perc_gc = percentage_gc_content)
 dplyr::glimpse(peaks)
 ```
 
 Note that the first column "gene_id" is a misnomer (wrong name), as we are not looking at genes. This sometimes happens in genomics, when a file format is re-used for other types of data.
-
-```{r}
-dplyr::glimpse(coldata)
-```
 
 Another useful package for summarizing data is *skimr* with the `skim()` function:
 
@@ -155,10 +138,13 @@ skim(peaks)
 Look at the histograms for the numeric variable table. How would you describe the distribution of the different numeric columns? Do these distributions make sense? Note that our subset of the data contains just the first 1,000 regions on chromosome 1.
 :::
 
-We will also run `skim` on the column data. We do this twice: once on the data after de-selecting the columns `assigned` and `peak_count`, and once just on those two columns. This is because the scale of those two columns is much larger than the other numberic columns, so it helps with printing to isolate them.
+We will also run `skim` on the column data, focusing on the numeric variables. We do this twice: once on the data after de-selecting the columns `assigned` and `peak_count`, and once just on those two columns. This is because the scale of those two columns is much larger than the other numberic columns, so it helps with printing to isolate them.
 
 ```{r}
-coldata |> select(!c(assigned, peak_count)) |> skim()
+coldata |> 
+  select(where(is.numeric)) |>
+  select(!c(assigned, peak_count)) |> 
+  skim()
 ```
 
 Note that the meaning of the columns is described in a metadata file at the Zenodo link.
@@ -170,7 +156,9 @@ The `assigned_frac` column is described as the "fraction of non-mitochondrial re
 :::
 
 ```{r}
-coldata |> select(assigned, peak_count) |> skim()
+coldata |> 
+  select(assigned, peak_count) |> 
+  skim()
 ```
 
 ::: {.callout-note collapse="false"}
@@ -364,9 +352,10 @@ plot_qq(log_counts_6, ncol = 3)
 We can also make a matrix of correlations:
 
 ```{r}
-#| fig-width: 5
-#| fig-height: 5
-plot_correlation(log_counts_6)
+cormat <- cor(log_counts_6)
+range(cormat)
+library(pheatmap)
+pheatmap(cormat)
 ```
 
 There are a number of packages that provide more fine-grained correlation matrices, such as [corrgram](https://cran.r-project.org/web/packages/corrgram/vignettes/corrgram_examples.html).
@@ -409,7 +398,7 @@ Below we will create an object to combine and coordinate the `counts` (with rows
 
 Principal component analysis (PCA) is a highly useful EDA technique, which rotates our dataset into a new coordinate system. It's helpful for plotting, diagnostics, machine learning, bias removal, and many more data analytic tasks. We will use it on our chromatin accessibility data to explore how the samples differ in the counts over the regions.
 
-As we have a table with samples as columns, this means we will be rotating our data from the original space of _p_ features (the number of rows) into a new space of _p_ features where the first features are the most "important". Mathemetically, we can say the first feature will have the most variance, defined as $\frac{1}{n} \sum_i (x_i - \bar{x})^2$, and so on for the second, third, etc. We can also say that taking the top T rotated features are the best at preserving distances in the entire space. So it's an efficient way to _compress_ information into a set of ranked features. 
+As we have a table with samples as columns, this means we will be rotating our data from the original space of _p_ features (the number of rows) into a new space of _p_ features where the first features are the most "important". Mathematically, we can say the first feature will have the most variance, defined as $\frac{1}{n} \sum_i (x_i - \bar{x})^2$, and so on for the second, third, etc. We can also say that taking the top T rotated features are the best at preserving distances in the entire space. So it's an efficient way to _compress_ information into a set of ranked features. 
 
 A technical detail before we run PCA: we need to deal with the fact that each column of our matrix has an arbitrary column sum, as we saw before. This tends to not tell us much about the chromatin accessibility, and so hides important biological relationships.
 
@@ -440,6 +429,7 @@ plot(pca$x[, 1:2], asp = 1)
 We can ask, what original features are contributing substantially to these top rotated dimensions?
 
 ```{r}
+library(tibble)
 rot <- pca$rotation[,1:4] |> as_tibble()
 rot |> 
   arrange(desc(abs(PC1))) |>
@@ -515,7 +505,7 @@ peaks <- peaks |>
     end,
     strand,
     peak_id = gene_id,
-    gc = percentage_gc_content
+    perc_gc
   )
 rowData(se) <- peaks
 rowData(se)
