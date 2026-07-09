@@ -86,7 +86,7 @@ Let's start by reading in the counts matrix. Here I use the basic `read.delim()`
 library(tibble)
 library(here)
 # this file has no column name for first column (these are e.g. row names)
-counts <- read.delim(here("labs/exploratory/counts.txt.gz"))
+counts <- read.delim(here("exploratory/counts.txt.gz"))
 counts <- counts |> 
   rownames_to_column("peak") |>
   as_tibble()
@@ -107,14 +107,14 @@ test_dat |> as.data.frame()
 
 ```{r}
 library(readr)
-peaks <- read_delim(here("labs/exploratory/peaks.txt.gz"))
+peaks <- read_delim(here("exploratory/peaks.txt.gz"))
 peaks
 ```
 
 And the sample information, in a file referring to "column data", because the columns of the matrix are samples:
 
 ```{r}
-coldata <- read_delim(here("labs/exploratory/coldata.txt.gz"))
+coldata <- read_delim(here("exploratory/coldata.txt.gz"))
 coldata
 ```
 
@@ -152,7 +152,7 @@ skim(peaks)
 ::: {.callout-note collapse="false"}
 ## Question
 
-Scroll to the right in the numeric variable table. How would you describe the distribution of the different numeric columns? Do these distributions make sense? Note that our subset of the data contains just the first 1,000 regions on chromosome 1.
+Look at the histograms for the numeric variable table. How would you describe the distribution of the different numeric columns? Do these distributions make sense? Note that our subset of the data contains just the first 1,000 regions on chromosome 1.
 :::
 
 We will also run `skim` on the column data. We do this twice: once on the data after de-selecting the columns `assigned` and `peak_count`, and once just on those two columns. This is because the scale of those two columns is much larger than the other numberic columns, so it helps with printing to isolate them.
@@ -185,7 +185,7 @@ Note that we can also select by pattern, see `?select` for more details:
 coldata |> select(ends_with("_date"))
 ```
 
-## Cumulative densities, histograms, ggplot
+## Cumulative densities, histograms, ggplot2
 
 Above we saw small text-based histograms of numeric data, which allow us to quickly look at the distribution of values. Here I explore that further, first introducing the `ecdf()` function. An *empirical cumulative density function* shows similar information to a histogram, as if the bars of the histogram were stacking on top of each other from left to right. But instead of breaking the range of the data on the x-axis into bins, each data point is represented. The value on the y-axis goes from 0 on the left edge of the data (minimum) to 1 on the right edge of the data (maximum). Reading the x-value where the y-value equals 0.5 gives the median.
 
@@ -355,7 +355,7 @@ ggplot(
   stat_summary(fun = median, geom = "point", size=3)
 ```
 
-The "QQ-plot" aligns the quantiles of the data with those of a Normal distribution (or another reference distribution). If the values fall roughly on a line, this means the data is roughly normally distributed.
+The "QQ-plot" aligns the quantiles of the data with those of a Normal distribution (or another reference distribution). If the values fall roughly on a line, this means the data is roughly normally distributed. I don't personally use QQ-plots very often, but if you have to compare to a reference distribution for some reason, these are standard.
 
 ```{r}
 plot_qq(log_counts_6, ncol = 3)
@@ -374,7 +374,7 @@ There are a number of packages that provide more fine-grained correlation matric
 ::: {.callout-note collapse="false"}
 ## Question
 
--   What could you say, in broad terms, about the first six samples in terms of these plots?
+-   What could you say, in broad terms, about the first six samples in terms of these plots (pick whichever plots you want to focus on, e.g. from the colored densities and correlation matrix)?
 -   For those who are more familiar with omics data such as gene expression and chromatin accessibility: suppose we also read in the gene expression data as a matrix. What might be a way to check that our data is properly aligned by sample across the two assays? What part of a gene must be accessible for it to be expressed? What steps would it take to perform this check?
 :::
 
@@ -428,11 +428,13 @@ scaled_counts <- counts |>
 
 Now we compute PCA on the samples. We need to transpose with `t()` to make samples into rows. We take the logarithm (base 10) of the counts in addition, with a pseudocount of 1. There are many considerations about which transformation if any, but something like a logarithm on count data is useful for seeing patterns. 
 
-We can immediately make a plot of the data in the rotated space. A 2D scatterplot shows us PC1 and PC2.
+We can immediately make a plot of the data in the rotated space. A 2D scatterplot shows us PC1 and PC2 (`asp = 1` ensures the aspect ratio is kept fixed 1:1).
 
 ```{r}
+#| fig-width: 5
+#| fig-height: 5
 pca <- prcomp(t(log10(scaled_counts + 1)))
-plot(pca$x[,1:2])
+plot(pca$x[, 1:2], asp = 1)
 ```
 
 We can ask, what original features are contributing substantially to these top rotated dimensions?
@@ -506,11 +508,16 @@ What do you observe in the PCA plot colored by sample condition?
 We actually have three aligned tables (remember, `peaks` and `counts` were already aligned by row). Let's add the peak data
 
 ```{r}
-rowData(se) <- peaks |> 
+peaks <- peaks |>
   select(
-    peak_id = gene_id, 
-    length, 
-    gc = percentage_gc_content)
+    chr,
+    start,
+    end,
+    strand,
+    peak_id = gene_id,
+    gc = percentage_gc_content
+  )
+rowData(se) <- peaks
 rowData(se)
 ```
 
@@ -520,21 +527,42 @@ I will annotate the rows of the `se` object:
 rownames(se) <- rowData(se)$peak_id
 ```
 
-Next we will also add the particular information about the location of the peaks, to enable more sophisticated downstream EDA.
+Next we will use the information about location of the genomic regions, to enable more sophisticated downstream EDA.
 
-## Case study: chromatin accessibility
+## Advanced case study: chromatin accessibility
 
-look for regions that have varying accessibility
+The following is a more advanced lab, which assumes some knowledge of genomics and computational biology. Feel free to stop here, or explore the rest. Ask TAs or instructors if you want more information, or you can also ask various AI chatbots, as this is a very well studied dataset with multiple papers and tutorials built upon it, and thematically examining chromatin accessibility across sample conditions (including immune stimulation) is a common genomics task.
+
+In the following case study, we briefly explore the chromatin accessibility in these 1,000 genomic regions. We will make use of the PCA results, and PC1 which apparently highlights regions that distinguish the naive condition from the immune response conditions (in particular the combined treatment).
+
+First we compute PCA on the transformed data.
 
 ```{r}
+#| fig-width: 5
+#| fig-height: 5
 pca <- prcomp(t(assay(vsd)))
-plot(pca$x[,1:2], col=vsd$condition)
+# base R PCA plot can be made with:
+plot(pca$x[, 1:2], col = vsd$condition, pch = 16, asp = 1)
+legend(
+  "topright",
+  levels(vsd$condition),
+  col = vsd$condition,
+  pch = 16,
+  inset = .05
+)
+```
+
+Examining the top features contributing to PC1 (in absolute value):
+
+```{r}
 rot <- pca$rotation[,1:4] |> as_tibble()
 rot |> 
   arrange(desc(abs(PC1))) |>
   head()
 pc1_features <- order(abs(rot$PC1), decreasing=TRUE) |> head(10)
 ```
+
+Plotting the scaled counts for some of the top features of PC1:
 
 ```{r}
 par(mfrow = c(2, 2), mar = c(4.5, 4.5, .5, .5))
@@ -547,6 +575,14 @@ for (i in c(1,3,5,7)) {
   )
 }
 ```
+
+::: {.callout-note collapse="false"}
+## Question
+
+What pattern does PC1 represent across these highlighted peaks?
+:::
+
+Doing the same for random features:
 
 ```{r}
 set.seed(5)
@@ -562,13 +598,29 @@ for (i in sample(1000, 9)) {
 ```
 
 ```{r}
+# reset the plotting par
+par(mfrow = c(1, 1), mar = c(4.5, 4.5, 1, 1))
+```
+
+Saving our genomic regions as a genomic range (_GRanges_ object) called `p`.
+
+The _plyranges_ package is part of the [tidyomics project](https://github.com/tidyomics) and allows the use of _dplyr_ syntax on specialized objects for genomics. Note also _plyranges_ has import functions such as `read_bed`, `read_narrowpeaks`, `read_bigwig`, etc.
+
+```{r}
 #| message: false
 library(plyranges)
-library(nullranges)
 p <- peaks |>
   as_granges(seqnames = chr)
 p
 ```
+
+::: {.callout-note collapse="false"}
+## Question
+
+This object `p` that we just created has missing `seqinfo` -- explore with `seqinfo(p)`. Why would it be useful to always work with data that has a specified genome with chromosome lengths?
+:::
+
+Adding PC1 loadings (the rotation information) and an absolute-valued and scaled version of PC1:
 
 ```{r}
 p <- p |>
@@ -576,46 +628,100 @@ p <- p |>
     pc1 = rot[, "PC1", drop = TRUE],
     abs_scaled_pc1 = abs(pc1)/max(abs(pc1))
   )
-plot(p$abs_scaled_pc1)
+plot(start(p), p$abs_scaled_pc1)
 ```
 
+Suppose we want to know about which regions have high values contributing to PC1, in terms of tiles of 10,000 bp along this region:
+
 ```{r}
-tiles <- range(p) %>%
-  tile_ranges(width=1e4) %>%
+tiles <- range(p) |>
+  tile_ranges(width = 1e4) %>%
   mutate(id = seq_along(.))
+tiles
 ```
 
+Syntax note: in the above code chunk, I use `%>%` at one point instead of `|>`. This minor detail is because only `%>%` allows for the use of `.` nested within a function (here nested within `mutate`). For the most part `|>` and `%>%` are exchangeable, with `|>` slightly preferred as it is part of base R.
+
+See also `slide_ranges` in _plyranges_ package, and `tileGenome` in the _GenomicRanges_ package.
+
+We can look at the summarized amount of PC1 contribution in each tile. Overlaps in _plyranges_ can be computed as follows. Note that many options exist here, including `_directed` (strand-specific), `_within`, `maxgap`, `minoverlap`, etc.
+
 ```{r}
-tab <- tiles |> 
+tiles |>
+  join_overlap_left(p)
+# NA indicates no overlap...
+# can be dropped with join_overlap_inner()
+```
+
+Adding together with grouping and summarization:
+
+```{r}
+tab <- tiles |>
   join_overlap_left(p) |>
   group_by(id) |>
-  summarize(sum_pc1 = sum(abs_scaled_pc1)) |>
-  as_tibble() |>
-  mutate(sum_pc1 = tidyr::replace_na(sum_pc1, 0))
-plot(tab$sum_pc1)
+  summarize(
+    n_overlaps = sum(!is.na(peak_id)), # has overlap
+    sum_pc1 = sum(abs_scaled_pc1, na.rm=TRUE)
+  ) |>
+  as_tibble()
+tab
+plot(start(tiles), tab$sum_pc1)
 ```
+
+Note: for more examples of using _plyranges_ to manipulate genomic regions in R, see my [tidy ranges tutorial](https://tidyomics.github.io/tidy-ranges-tutorial/).
+
+Note: For examples of plotting genomic data, see [plotgardener](https://phanstiellab.github.io/plotgardener/) for enabling complex plots with multiple components, and [wiggleplotr](https://bioconductor.org/packages/wiggleplotr/) for simple gene plots.
+
+::: {.callout-note collapse="false"}
+## Question
+
+Is there any relationship between the GC content (`gc`) and the contribution to PC1 in tiles?
+:::
+
+Which tile has the highest summarized contribution to PC1? Which peaks are contributing to this tile?
 
 ```{r}
 which.max(tab$sum_pc1)
-tab |> slice(which.max(sum_pc1))
-max_tile <- tiles |> slice(which.max(tab$sum_pc1))
+tab |> dplyr::slice(which.max(sum_pc1))
+max_tile <- tiles |> dplyr::slice(which.max(tab$sum_pc1))
 p |>
   filter_by_overlaps(max_tile)
 ```
 
-How to bootstrap ranges?
+## Advanced case study: bootstrapping genomic data
+
+A final code chunk demonstrates how we might begin to ask about our observed sequence with respect to _null_ data. We can take the original data and randomize it using the bootstrap. For more details see the _bootRanges_ vignette in the _nullranges_ package, or in the [bootstrap chapter](https://tidyomics.github.io/tidy-ranges-tutorial/bootstrap-overlap.html) of _tidy ranges tutorial_.
+
+This code below creates 10 bootstrapped versions of the peaks data, and assesses how often we see as large a summarized PC1 value for a particular tile we highlighted above. 
+
+In a more realistic analysis, I might use an anchored set of features in lieu of `max_tile` here. For example, a pre-defined set of regions of interest, such as genes related to immune response.
 
 ```{r}
+library(nullranges)
 seqlengths(p) <- c("1" = 9e6) # just for demo
 boot <- bootRanges(p, blockLength = 1e5, R = 10)
-boot |>
+res_ovrlp <- boot |>
   filter_by_overlaps(max_tile) |>
   group_by(iter) |>
   summarize(
-    num_overlaps = n(),
+    n_overlaps = n(),
     sum_pc1 = sum(abs_scaled_pc1)
+  ) |>
+  as_tibble()
+res_ovrlp
+```
+
+We can use `complete()` from _tidyr_ to fill in the missing iterations (had no overlap):
+
+```{r}
+res_ovrlp |>
+  tidyr::complete(
+    iter,
+    fill = list(n_overlaps = 0, sum_pc1 = 0)
   )
 ```
+
+This concludes the brief case study of exploring omics data in genomic context, and in the following appendix, I show some alternative packages and functions that you may find useful for EDA.
 
 ## Appendix
 
@@ -660,7 +766,7 @@ library(iSEE)
 iSEE(se_thin)
 ```
 
-### Missing data
+### Missing data toolkit
 
 Identifying and characterizing missingness is important! The *naniar* package helps to deal with and visualize patterns of missingness. As our above worked example dataset doesn't contain very many missing values, here I simulate a dataset with missingness.
 
