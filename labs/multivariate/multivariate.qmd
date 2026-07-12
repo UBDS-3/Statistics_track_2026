@@ -145,23 +145,36 @@ Now let us look at two-dimensional visualisations: pairs plots. A convenient way
 #| fig-width: 7
 #| fig-height: 7
 #| out-width: "100%"
-ggpairs(turtles)#
+ggpairs(turtles)
 ```
+
+::: {.callout-note collapse="false"}
+
+## Question
+
+6. What does each of the 16 subpanels show?
+```{r}
+#| label: question6-Solution
+#| eval: !expr params$include_answers
+#| echo: false
+#| results: asis
+cat("The panels on the diagonal show the distributions of each single variable. For the continuous variables length, width and height, the histogram is used. For the categorical variable sex, a barplot with the number of cases for each category is used. The off-diagonal panels show all $4\\times 3 /2$ pairwise comparisons. Pairs of continuous variables are shown with scatterplots and correlation coefficients, pairs of a continuous and a categorical variable are show with stratified (or \"faceted\") histograms and boxplots.")
+```
+:::
 
 ::: {.callout-note collapse="false"}
 
 ## Questions
 
-1. What does each of the 16 subpanels show?
-2. Can you repeat this plot for the `athletes` data?
-3. In the lecture, we have seen another way to investigate correlations in the data. Use the `pheatmap` function in the package with the same name, to visualise all pairwise correlations of the results from the ten disciplines in the athletes data set.
-4. Similarly, look at the heatmap of the pairwise correlations of the athletes.
+7. Can you repeat this plot for the `athletes` data?
+8. In the lecture, we have seen another way to investigate correlations in the data. Use the `pheatmap` function in the package with the same name, to visualise all pairwise correlations of the results from the ten disciplines in the athletes data set.
+9. Similarly, look at the heatmap of the pairwise correlations of the athletes.
 
 ```{r}
 #| label: questions6-7Solution
 #| fig-width: 8
 #| fig-height: 8
-#| out-width: "100%"
+#| out-width: "80%"
 #| eval: !expr params$include_answers
 #| echo: !expr params$include_answers
 #| results: "asis"
