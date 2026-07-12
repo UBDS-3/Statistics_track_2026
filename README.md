@@ -42,7 +42,7 @@ Rendered output is written next to each `.qmd` (e.g. `labs/multivariate/multivar
 
 #### Prerequisites
 
-* **bash** — the script runs on stock macOS bash 3.2 as well as newer bash.
+* **bash** 
 * **quarto** — must be installed. If it is not found, install [quarto-cli](https://quarto.org/docs/get-started/) or add it to your `PATH`.
 * **R packages** — each lab loads its own packages via `library()`; a missing one fails the render with `there is no package called '<pkg>'`. Install the reported package and re-run, e.g.:
 
