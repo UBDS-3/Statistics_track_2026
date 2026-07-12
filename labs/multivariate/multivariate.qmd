@@ -5,11 +5,11 @@ date: "13 July 2026"
 format:
   html:
     code-fold: false
-#    Do not display the code (which includes solutions)
-#    code-tools: true
     embed-resources: true
     highlight-style: github
+    number-sections: true
     toc: true
+    toc-depth: 2
     code-line-numbers: false
 params:
   include_answers: true
@@ -18,19 +18,11 @@ params:
 ```{r}
 #| label: initialize
 #| echo: FALSE
-#| include: FALSE
-options("scipen"=100, "digits"=4)
+options("scipen" = 100, "digits" = 4)
 knitr::opts_chunk$set(
-    eval  = params$include_answers,
-    echo  = params$include_answers,
-    cache = TRUE,
-    autodep = TRUE,
-    fig.width = 6,
-    fig.height = 4,
     fig.align = "center",
     fig.pos = "h"
 )
-set.seed(0xdada)
 ```
 
 # Goal
@@ -153,7 +145,7 @@ ggpairs(turtles)
 
 ## Question
 
-6. What does each of the 16 subpanels show?
+What does each of the 16 subpanels show?
 ```{r}
 #| label: question6-Solution
 #| eval: !expr params$include_answers
@@ -165,9 +157,7 @@ cat("The panels on the diagonal show the distributions of each single variable. 
 
 ::: {.callout-note collapse="false"}
 ## Question
-
-7. Can you repeat this plot for the `athletes` data?
-
+Can you repeat this plot for the `athletes` data?
 ```{r}
 #| label: question7-Solution
 #| fig-width: 8
@@ -181,7 +171,7 @@ ggpairs(athletes)
 
 ::: {.callout-note collapse="false"}
 ## Question
-8. In the lecture, we have seen another way to investigate correlations in the data. Use the `Heatmap` function from the `ComplexHeatmap` package to visualise all pairwise correlations of the results from the ten disciplines in the athletes data set. 
+In the lecture, we have seen another way to investigate correlations in the data. Use the `Heatmap` function from the `ComplexHeatmap` package to visualise all pairwise correlations of the results from the ten disciplines in the athletes data set. 
 
 Hint: use the following code to create your favourite colour scale for the heatmap.
 ```{r}
@@ -203,7 +193,7 @@ Heatmap(cor(athletes), col = mycolourscale)
 
 ::: {.callout-note collapse="false"}
 ## Question
-9. Similarly, look at the heatmap of the pairwise correlations of the athletes.
+Similarly, look at the heatmap of the pairwise correlations of the athletes.
 
 Hint: the central idea is to compute the correlation as above, but with the transposed version of the matrix, using the R function `t()`. We also center and scale each discipline's results with the function `scale()`, to have mean zero and standard deviation one -- if we do not do that (try!), all the correlations are close to 1, simply reflecting the fact that the outcomes of different disciplines are measured in different units (meters, seconds), and each discipline has a typical numerical range of outcomes. We will explore scaling more deeply in the next section.
 ```{r}
@@ -223,7 +213,7 @@ Heatmap(cor(transposed_athletes), col = mycolourscale)
 
 # Preprocessing
 
-In many cases, different variables are measured in different units, such that directly comparing the numbers makes no sense. and at different scales. As discussed in the lecture, we have various options to transform the data. Here, we elect to standardize the data to a common standard deviation. This rescaling is done using the `scale` function, which subtracts the mean and divides by the standard deviation, so that every column has a unit standard deviation and mean zero.
+In many cases, different variables are measured in different units, such that directly comparing the numbers makes no sense. Even if they are in the same unit, they may have different ranges. As discussed in the lecture, we have various options to transform the data. Here, we choose to standardize each variable to a common mean and standard deviation. We do this using the `scale` function, which subtracts the mean and divides by the standard deviation, so that every column has a standard deviation of 1, and a mean of 0.
 
 In the code below, we go through some extra gymnastics to scale only the numeric columns (those not named `sex`) and keep as is the categorical column (the one named `sex`).
 
@@ -231,7 +221,7 @@ In the code below, we go through some extra gymnastics to scale only the numeric
 #| label: turtlesDim12
 #| eval: true
 #| echo: true
-scaledTurtles = cbind(
+scaledTurtles = bind_cols(
   select(turtles, sex),
   scale(select(turtles, !sex))
 )
@@ -242,15 +232,16 @@ head(scaledTurtles)
 
 ## Questions
 
-10. Can you compute the standard deviation and mean of each numerical column in the `turtles` data frame? Do the same on the scaled dataset, i.e. on `scaledTurtles`. What was the mean of turtles' heights before standardizing?
+Can you compute the standard deviation and mean of each numerical column in the `turtles` data frame, i.e., before scaling? Do the same on `scaledTurtles`. 
 
 ```{r}
 #| label: questions9-Solution
 #| eval: !expr params$include_answers
 #| echo: !expr params$include_answers
-sapply(select(turtles, !sex), sd)
-sapply(select(scaledTurtles, !sex), sd)
 sapply(select(turtles, !sex), mean)
+sapply(select(turtles, !sex), sd)
+sapply(select(scaledTurtles, !sex), mean)
+sapply(select(scaledTurtles, !sex), sd)
 ```
 :::
 
@@ -258,8 +249,6 @@ We can visualize the pairwise relationship of two columns (for example, height a
 
 ```{r }
 #| label: turtlesDim
-#| eval: true
-#| echo: true
 #| fig-width: 5
 #| fig-height: 4
 #| out-width: "80%"
@@ -271,116 +260,78 @@ What is the purpose of the `coord_fixed()` modifier here?
 
 # Dimensionality reduction
 
+## By variable selection
+
 In this part, we will use geometrical projections of points in a higher dimensional space and project them down to lower dimensions.
 
 The first example will be the projection of the points in a two-dimensional space (defined by weight and disc distance in the athlete data set) onto a 1-dimensional space. 
 
-But first we need to scale the athlete data set. We again use the `scale` function, it is even here since all the columns are numeric.
+But first we need to scale the athlete data set. We again use the `scale` function. Calling it is even simpler here, since all the columns are numeric; on the other hand, we need to cast its output, which is of datatype `matrix`, back into a dataframe (`tibble`). 
 
 ```{r}
 #| label: scaledathletes
-#| eval: true
-#| echo: true
-scaledathletes = scale(athletes)
-n = nrow(scaledathletes)
+scaledathletes = scale(athletes) |> as_tibble()
+scaledathletes
 ```
 
+We start with p being a 2-dimensional plot of disc vs weight. We add a mock data column `zero` to use as coordinates for some of the subsequent plotting.
+
 ```{r}
-#| label: ggplotscaledathletes
-#| eval: true
-#| echo: true
+#| label: ggplotscaledathletes1
+p = ggplot(mutate(scaledathletes, zero = 0),
+           aes(x = weight, y = disc)) + geom_point(shape = 1) + coord_fixed()
+```
+Then we add the projected points and the dashed lines.
+```{r}
+#| label: ggplotscaledathletes2
 #| fig-width: 5
 #| fig-height: 4
 #| out-width: "80%"
-# First, p is a 2-dimensional plot of the points defined by weight (x) and disc (y)
-p = ggplot(scaledathletes, aes(x = weight, y = disc)) + geom_point(shape = 1)
-
-# Then we add the projected points and the projection lines (dashed)
-p + geom_point(aes(y = rep(0, n)), color = "#0056B9") +
-    geom_segment(aes(xend = weight, yend = rep(0, n)), linetype = "dashed")
+p + geom_point(aes(y = zero), color = "#0056B9") +
+    geom_segment(aes(xend = weight, yend = zero), linetype = "dashed")
 ```
 
-::: {.callout-note collapse="false"}
-
-## Questions
-
-Now try to do the following:
-
-1. Calculate the standard deviation of the blue points (their $x$-coordinates) in the above figure.
-
-2. Make a similar plot showing projection lines onto the $y$-axis and show projected points in yellow. What is the variance of the projected points now?
-
-```{r}
-#| label: questions10-11Hint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#1
-__(scaledathletes$______)
-
-#2
-p + geom_point(aes(x = ___(0, _)), color = "#0056B9") +
-  geom_segment(aes(yend = ____, xend = rep(0, _)), linetype = "dashed")
-
-__(scaledathletes$____)
-
-# Hint:
-# ...
-```
+The blue points show the projection of the data onto a single variable, `weight`, in the $x$-axis. 
+We can make a similar plot showing the projection onto the $y$-axis. 
 
 ```{r}
 #| label: questions10-11Solution
-#| eval: !expr params$include_answers
-#| echo: !expr params$include_answers
-
-#1
-sd(scaledathletes$weight)
-
-#2
-p + geom_point(aes(x = rep(0, n)), color = "#0056B9") +
-  geom_segment(aes(yend = disc, xend = rep(0, n)), linetype = "dashed")
-
-sd(scaledathletes$disc)
+#| fig-width: 5
+#| fig-height: 4
+#| out-width: "80%"
+p + geom_point(aes(x = zero), color = "#0056B9") +
+    geom_segment(aes(yend = disc, xend = zero), linetype = "dashed")
 ```
 
-:::
+## By fitting a line
 
-# Summarize 2D-data by a line
-
-In the above example when projecting the 2-dimensional points to the `weight` axis, we lost the `disc` information. In order to keep more information, we will now project the 2 dimensional point cloud onto another line.
+In the above example when projecting the 2-dimensional points to the `weight` axis, we lost the `disc` information; and vice versa. To keep more information, we will now project the 2 dimensional point cloud onto another line.
 
 For this, we first compute a linear model to find the regression line using the `lm` function (linear model). We regress `disc` on `weight`. The regression line is defined by two parameters: its slope and its intercept. The slope a is given by the second coefficient in the output of `lm` and its intercept b is the first coefficient:
 
 ```{r}
 #| label: reg1
-#| eval: true
-#| echo: true
 reg1 = lm(disc ~ weight, data = scaledathletes)
 ```
 
-# Extract intercept and slope values
+### Linear regression
+
 ```{r}
 #| label: extractab
-#| eval: true
-#| echo: true
 a1 = reg1$coefficients[1] # Intercept
 b1 = reg1$coefficients[2] # slope
 ```
-
-Plot the points p (computed in the code section before) and the regression line.
+Plot the points `p` (computed above) and the regression line.
 ```{r}
 #| label: reg3
-#| eval: true
-#| echo: true
+#| message: false
+#| warning: false
 pline = p + geom_abline(intercept = a1, slope = b1, col = "#0056B9", lwd = 1.5) + coord_fixed()
 ```
 
 Add the projection lines (from the point to its fitted value)
 ```{r}
 #| label: reg4
-#| eval: true
-#| echo: true
 #| fig-width: 5
 #| fig-height: 4
 #| out-width: "80%"
@@ -388,126 +339,59 @@ pline + geom_segment(aes(xend = weight, yend = reg1$fitted),
                      color = "#FFD800", arrow = arrow(length = unit(0.15, "cm")))
 ```
 
-::: {.callout-note collapse="false"}
-
-## Question
-
-Can you regress `weight` on `discs` and generate a similar plot?
+Instead, we can also regress `weight` on `discs` and generate a similar plot.
 
 ```{r}
-#| label: questionsReg1Hint1
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#1
-reg2 = __(______ ~ ____, data = scaledathletes)
-
-# Extract the intercept and slope values
-a2 = reg2$____________[_] # Intercept
-b2 = reg2$____________[_] # slope
-
-# Plot the points p (computed in the code section before) & the regression line
-p = ______(scaledathletes, aes(x = ____, y = ______)) + geom_point(shape = 1) + coord_fixed()
-newline = p + geom_abline(intercept = __, slope = __, col = "#FFD800")
-
-# Add the projection lines (from the point to its fitted value)
-newline + geom_segment(
-  aes(y = ______, x = ____, yend = reg2$______, xend = ____),
-  color = "#0056B9",
-  arrow = arrow(length = unit(0.15, "cm"))) + coord_flip()
-
-# Hint:
-# ...
-```
-
-```{r}
-#| label: questionsReg1Solution1
+#| label: compute_reg2
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "80%"
-#| eval: !expr params$include_answers
-#| echo: !expr params$include_answers
-#1
+#| message: false
 reg2 = lm(weight ~ disc, data = scaledathletes)
+a2 = reg2$coefficients[1]
+b2 = reg2$coefficients[2]
 
-# Extract the intercept and slope values
-a2 = reg2$coefficients[1] # Intercept
-b2 = reg2$coefficients[2] # slope
-
-# Plot the points p (computed in the code section before) & the regression line
-p = ggplot(scaledathletes, aes(x = disc, y = weight)) + geom_point(shape = 1) + coord_fixed()
-newline = p + geom_abline(intercept = a2, slope = b2, col = "#FFD800")
-
-# Add the projection lines (from the point to its fitted value)
-newline + geom_segment(
+pline2 = p + geom_abline(intercept = a2, slope = b2, col = "#FFD800")
+pline2 + geom_segment(
   aes(y = weight, x = disc, yend = reg2$fitted, xend = disc),
   color = "#0056B9",
   arrow = arrow(length = unit(0.15, "cm"))) + coord_flip()
 ```
 
-:::
+Now let us make a plot that shows all points, as well as both regression lines, i.e., from `lm(disc ~ weight)` as well as `lm(weight ~ disc)`.
 
-::: {.callout-note collapse="false"}
-
-## Question
-
-Can you create a plot that shows all points, as well as both regression lines, i.e., a plot that show both the line you get from `lm(disc ~ weight)` and `lm(weight ~ disc)`?
-
-```{r}
-#| label: questionsReg1Solution2
-#| eval: !expr params$include_answers
-#| echo: false
-#| results: 'asis'
-cat("We plot the data such that the $x$-axis is `disc` and the $y$-axis is `weight`. So we can directly use the intercept and slope parameters from the first regression, `reg1`. For the second regression, `reg2`, we invert
-\\begin{align}
-y&=a+bx\\quad\\quad\\Rightarrow\\\\
-x&=-\\frac{a}{b}+\\frac{1}{b}y
-\\end{align}")
-```
-
-```{r}
-#| label: questionsReg1Hint3
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-ggplot(scaledathletes, aes(x = ____, y = ______)) + geom_point(shape = 1) +
-  coord_fixed() +
-  geom_abline(intercept =     __, slope =   __, col = "#0056B9") +
-  geom_abline(intercept = -__/__, slope = 1/__, col = "#FFD800")
-
-# Hint:
-# ...
-```
+We plot the data such that the $x$-axis is `disc` and the $y$-axis is `weight`. So we can directly use the intercept and slope parameters from the first regression, `reg1`. For the second regression, `reg2`, we invert
+$$
+\begin{align}
+y&=a+bx\quad\quad\Leftrightarrow\\
+x&=-\frac{a}{b}+\frac{1}{b}y
+\end{align}
+$$
 
 ```{r}
 #| label: questionsReg1Solution3
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "80%"
-#| eval: !expr params$include_answers
-#| echo: !expr params$include_answers
 ggplot(scaledathletes, aes(x = disc, y = weight)) + geom_point(shape = 1) +
   coord_fixed() +
   geom_abline(intercept =     a1, slope =   b1, col = "#0056B9") +
   geom_abline(intercept = -a2/b2, slope = 1/b2, col = "#FFD800")
 ```
 
-:::
-
-
-# A line that minimizes distances in both directions
+### A line that minimizes distances in both directions
 
 Below we are plotting a line chosen to minimize the error in both the horizontal and vertical directions. This results in minimizing the diagonal projections onto the line.
 
 Specifically, we compute a line that minimizes the sum of squares of the orthogonal (perpendicular) projections of data points onto it. We call this the principal component line.
 
 ```{r }
-#| include: true
-#| eval: true
-#| echo: true
-X = cbind(scaledathletes$disc, scaledathletes$weight)
+#| label: svda
+#| fig-width: 4
+#| fig-height: 4
+#| out-width: "80%"
+#| message: false
+X = as.matrix(select(scaledathletes, disc, weight))
 svda = svd(X)
 pc = X %*% svda$v[, 1] %*% t(svda$v[, 1])
 bp = svda$v[2, 1] / svda$v[1, 1]
@@ -518,71 +402,12 @@ p + geom_segment(xend = pc[, 1], yend = pc[, 2], arrow = arrow(length = unit(0.1
   coord_fixed()
 ```
 
-Now let's see how we can use the learned on a higher-dimensional data set.
+Now let us see how we can use what we learned on a higher-dimensional data set.
 
-# Turtle PCA
+# Turtles PCA
 
-To start we will come back to the turtles data set. First, we need to make sure we understand the basic features of the data and preprocess it in a way that its in the correct "shape" for running the PCA analysis.
-
-::: {.callout-note collapse="false"}
-
-## Questions
-
-1. What are the mean values and standard deviation, of each of the 3 features: length, width and height.
-2. Scale the data.
-3. Explore the correlations between the 3 variables after scaling the data. What do you see?
-
-```{r}
-#| label: questionsTurtleHint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#1
-_____(turtles[____], _, ____)
-_____(turtles[____], _, __)
-
-#2
-turtlesc = _____(turtles[____])
-
-#3
-corrs = ___(turtlesc)
-corrs |> round(3)
-________(corrs, cellwidth = 40, cellheight = 40, color = mycolors)
-
-# Hint:
-# ...
-```
-
-```{r}
-#| label: questionsTurtleSolution
-#| fig-width: 4
-#| fig-height: 4
-#| out-width: "60%"
-#| eval: !expr params$include_answers
-#| echo: !expr params$include_answers
-#1
-apply(turtles[, -1], 2, mean)
-apply(turtles[, -1], 2, sd)
-
-#2
-turtlesc = scale(turtles[, -1])
-
-#3
-corrs = cor(turtlesc)
-corrs |> round(3)
-Heatmap(corrs, col = mycolourscale)
-```
-
-:::
-
-```{r}
-#| echo: false
-#| eval: true
-turtlesc = scale(turtles[, -1])
-```
-
-From the correlations, you see that all 3 variables are strongly correlated. (In the heatmap, note that the color scale already starts with a high value at its lower end.) Hence we expect that the data can be well approximated by a single variable. Let's do the PCA:
+We already saw above that the variables length, width and height are strongly correlated. Let's do the PCA.
+We use `prcomp` built-in centering and scaling, so provide the original (unscaled) `turtles` dataframe.
 
 ```{r}
 #| label: pcaturtles
@@ -591,12 +416,11 @@ From the correlations, you see that all 3 variables are strongly correlated. (In
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "60%"
-pca1 = princomp(turtlesc)
-pca1
+pca_turtles = prcomp(select(turtles, !sex), center = TRUE, scale. = TRUE)
+pca_turtles
 ```
 
-To look at the relative importance of the principal components,
-we can look at their variances: the screeplot.
+To look at the relative importance of the principal components,we can look at their variances: the screeplot.
 The screeplot shows the eigenvalues for the standardized data.
 
 ```{r }
@@ -606,83 +430,42 @@ The screeplot shows the eigenvalues for the standardized data.
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "60%"
-fviz_eig(pca1, geom = "bar", width = 0.4)
+fviz_eig(pca_turtles, geom = "bar", width = 0.4)
 ```
 
-Note: Here we see one very large component in this case and two very small ones.
-In this case the data are (almost) one dimensional.
+We see one very large component and two much smaller ones.
+In this case the data are (almost) one dimensional. We can interpret as the underlying ("latent") variable `size`, which affects length, width and height each in more or less the same, approximately proportional way.
 
 ::: {.callout-note collapse="false"}
+## Question
 
-## Questions
-
-1. What is the percentage of variance explained by the first PC?
-How can you obtain this value from the pca1 object?
-2. How many PCs are you using if you want to project the turtles data set?
-
-```{r}
-#| label: questionsSummaryPcaturtleHint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#1
-_______(____)
-
-#2
-Your idea here
-
-# Hint:
-# ...
-```
-
+What is the percentage of variance explained by the first PC?
+How can you obtain this value from the pca_turtles object?
 
 ```{r}
 #| label: questionsSummaryPcaturtleSolution
 #| eval: !expr params$include_answers
 #| echo: !expr params$include_answers
-#1
-summary(pca1)
-
-#2
-# One PC would be sufficient.
+summary(pca_turtles)
 ```
-
 :::
 
-Now, lets plot the samples with their PC1 and PC2 coordinates,
-together with the variables. The representation of both,
-the samples and the variables is called a biplot.
+Now, let us plot the individual animals, represented by their PC1 and PC2 coordinates.
+We can in addition show how the original variables align with the PCs. This called a biplot.
 
 ```{r }
 #| label: turtlesBiplot
-#| eval: true
-#| echo: true
-fviz_pca_biplot(pca1, label = "var")
+#| fig-width: 4
+#| fig-height: 4
+#| out-width: "60%"
+fviz_pca_biplot(pca_turtles, label = "var")
 ```
 
 ::: {.callout-note collapse="false"}
-
 ## Questions
 
 1. Can you extend this plotting code to color the female samples differently than the male samples?
-2. Did the males or female turtles tend to be larger?
-
-```{r}
-#| label: questionsFvizPcaBiplotTurtlesHint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#6
-_______________(____, label = "var", _______ = turtles[__])
-
-#7
-Your idea here
-
-# Hint:
-# ...
-```
+2. Do the male or female turtles tend to be larger?
 
 ```{r}
 #| label: questionsFvizPcaBiplotTurtlesSolution
@@ -691,87 +474,41 @@ Your idea here
 #| fig-width: 4
 #| fig-height: 4
 #| out-width: "60%"
-#6
-fviz_pca_biplot(pca1, label = "var", col.ind = turtles[,1])
-
-#7
-# Females
+fviz_pca_biplot(pca_turtles, label = "var", col.ind = turtles$sex)
 ```
-
+We see that the females are larger.
 :::
 
-# Back to the athletes
-
-Now let us try to run the PCA on a larger data set
-and interpret the corresponding scree plot.
-In this case we are using a different library,
-with a slightly different output of the PCA computation.
-But the principle is the same.
+# Athletes PCA
 
 ```{r}
-#| label: pac.ath
-#| eval: true
-#| echo: true
-# The dudi.pca function by default already centers and scales the data by itself
-pca.ath = dudi.pca(athletes, scannf = FALSE)
-pca.ath$eig
+#| label: pca.ath
+pca_athletes = prcomp(athletes, center = TRUE, scale. = TRUE)
+```
+
+Just like above for the turtles data set, let us look at scree plot and biplot.
+
+```{r}
+#| label: pca_athletes
+#| fig-width: 5
+#| fig-height: 5
+#| out-width: "60%"
+fviz_eig(pca_athletes, geom = "bar", bar_width = 0.3) + ggtitle("")
+fviz_pca_biplot(pca_athletes, label = "var")
+fviz_pca_ind(pca_athletes)
 ```
 
 ::: {.callout-note collapse="false"}
-
-## Questions
-
-1. Just like in the above turtle data set. Can you produce a scree plot?
-2. How many PCs are you using if you want to project the athletes data set?
-3. Can you plot the samples with their PC1 and PC2 coordinates,
-together with the variables in a biplot?
-4. Can you plot the numbers of the athletes onto the samples.
-What do you notice about the numbers?
+## Question
+What do you notice in the last plot above, which shows the row numbers of the individuals in the `athletes` dataframe?
 
 ```{r}
-#| label: questionsAthletetsHint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#1
-________(_______, geom = "bar", bar_width = 0.3) + ggtitle("")
-
-#2
-# ____________________________
-
-#3
-_______________(_______, label = "var")
-
-#4
-____________(_______) + ggtitle("") + ylim(c(____, ___))
-
-
-# Hint:
-# ...
-```
-
-```{r}
-#| label: questionsAthletetsSolution
-#| fig-width: 4
-#| fig-height: 4
-#| out-width: "60%"
+#| label: questionsAthletes-Solution
 #| eval: !expr params$include_answers
-#| echo: !expr params$include_answers
-
-#1
-fviz_eig(pca.ath, geom = "bar", bar_width = 0.3) + ggtitle("")
-
-#2
-#     Somewhere between 2 and 4
-
-#3
-fviz_pca_biplot(pca.ath, label = "var")
-
-#4
-fviz_pca_ind(pca.ath) + ggtitle("") + ylim(c(-2.5, 5.7))
+#| echo: false
+#| results: asis
+cat("The row numbers seems to correspond to the Olympic ranking of the athletes. The seem correlated with PC1, but not exactly the same.")
 ```
-
 :::
 
 ```{r}
