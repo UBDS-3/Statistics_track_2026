@@ -12,8 +12,7 @@ format:
     highlight-style: github
     code-line-numbers: false 
 params:
-  skip_execution: false
-  skip_answers: true
+  include_answers: true
 ---
 
 ```{r}
@@ -85,7 +84,7 @@ Let's start by reading in the counts matrix. Two packages used here:
 #| message: false
 library(readr)
 library(here)
-counts <- read_delim(here("exploratory/counts.txt.gz"))
+counts <- read_delim(here("labs/exploratory/counts.txt.gz"))
 counts
 ```
 
@@ -93,14 +92,14 @@ The last line prints the tibble to the console which shows the first 10 rows in 
 
 ```{r}
 library(readr)
-peaks <- read_delim(here("exploratory/peaks.txt.gz"))
+peaks <- read_delim(here("labs/exploratory/peaks.txt.gz"))
 peaks
 ```
 
 And the sample information, in a file referring to "column data", because the columns of the matrix are samples:
 
 ```{r}
-coldata <- read_delim(here("exploratory/coldata.txt.gz"))
+coldata <- read_delim(here("labs/exploratory/coldata.txt.gz"))
 coldata
 ```
 
