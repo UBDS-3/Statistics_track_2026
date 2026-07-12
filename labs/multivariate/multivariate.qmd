@@ -159,7 +159,7 @@ ggpairs(turtles)
 #| eval: !expr params$include_answers
 #| echo: false
 #| results: asis
-cat("The panels on the diagonal show the distributions of each single variable. For the continuous variables length, width and height, the histogram is used. For the categorical variable sex, a barplot with the number of cases for each category is used. The off-diagonal panels show all $4\\times 3 /2$ pairwise comparisons. Pairs of continuous variables are shown with scatterplots and correlation coefficients, pairs of a continuous and a categorical variable are shown with stratified (or \"faceted\") histograms and boxplots.")
+cat("The panels on the diagonal show the distributions of each single variable. For the numeric variables length, width and height, the histogram is used. For the categorical variable sex, a barplot with the number of cases for each category is used. The off-diagonal panels show all $4\\times 3 /2$ pairwise comparisons. Pairs of numeric variables are shown with scatterplots and correlation coefficients, pairs of a numeric and a categorical variable are shown with stratified (or \"faceted\") histograms and boxplots.")
 ```
 :::
 
@@ -223,13 +223,18 @@ Heatmap(cor(transposed_athletes), col = mycolourscale)
 
 # Preprocessing
 
-In many cases, different variables are measured in different units and at different scales. As discussed in the lecture, we have various options to transform the data. Here, we elect to standardize the data to a common standard deviation. This rescaling is done using the `scale` function, which subtracts the mean and divides by the standard deviation, so that every column has a unit standard deviation and mean zero.
+In many cases, different variables are measured in different units, such that directly comparing the numbers makes no sense. and at different scales. As discussed in the lecture, we have various options to transform the data. Here, we elect to standardize the data to a common standard deviation. This rescaling is done using the `scale` function, which subtracts the mean and divides by the standard deviation, so that every column has a unit standard deviation and mean zero.
+
+In the code below, we go through some extra gymnastics to scale only the numeric columns (those not named `sex`) and keep as is the categorical column (the one named `sex`).
 
 ```{r }
 #| label: turtlesDim12
 #| eval: true
 #| echo: true
-scaledTurtles = data.frame(sex = turtles[, 1], scale(turtles[, -1]))
+scaledTurtles = cbind(
+  select(turtles, sex),
+  scale(select(turtles, !sex))
+)
 head(scaledTurtles)
 ```
 
@@ -237,34 +242,19 @@ head(scaledTurtles)
 
 ## Questions
 
-1. Can you compute the standard deviation and mean of each column in the `turtles` data frame? Can you do the same on the scaled dataset, i.e. on `scaledturtles`? What was the mean of turtles' heights before standardizing?
+10. Can you compute the standard deviation and mean of each numerical column in the `turtles` data frame? Do the same on the scaled dataset, i.e. on `scaledTurtles`. What was the mean of turtles' heights before standardizing?
 
 ```{r}
-#| label: questions9Hint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-_____(turtles[____],       _, __)
-_____(scaledTurtles[____], _, __)
-_____(turtles[____],       _, ____)
-
-# Hint:
-# ...
-```
-
-```{r}
-#| label: questions9Solution
+#| label: questions9-Solution
 #| eval: !expr params$include_answers
 #| echo: !expr params$include_answers
-apply(turtles[, -1],       2, sd)
-apply(scaledTurtles[, -1], 2, sd)
-apply(turtles[, -1],       2, mean)
+sapply(select(turtles, !sex), sd)
+sapply(select(scaledTurtles, !sex), sd)
+sapply(select(turtles, !sex), mean)
 ```
-
 :::
 
-We can visualize two columns/dimensions (for example height and width) of the scaled data using `ggplot`.
+We can visualize the pairwise relationship of two columns (for example, height and width) of the scaled data using `ggplot`.
 
 ```{r }
 #| label: turtlesDim
@@ -283,15 +273,15 @@ What is the purpose of the `coord_fixed()` modifier here?
 
 In this part, we will use geometrical projections of points in a higher dimensional space and project them down to lower dimensions.
 
-The first example will be the projection of the points in a two-dimensional space (defined by weight and disc distance in the athlete data set) onto a 1-dimensional space. The 1-dimensional space in this case is defined by the weight-axis/x-axis.
+The first example will be the projection of the points in a two-dimensional space (defined by weight and disc distance in the athlete data set) onto a 1-dimensional space. 
 
-But first we need to scale the athlete data set, in the same way as we did it with the turtles data set.
+But first we need to scale the athlete data set. We again use the `scale` function, it is even here since all the columns are numeric.
 
 ```{r}
 #| label: scaledathletes
 #| eval: true
 #| echo: true
-scaledathletes = data.frame(scale(athletes))
+scaledathletes = scale(athletes)
 n = nrow(scaledathletes)
 ```
 
