@@ -5,7 +5,8 @@ date: "13 July 2026"
 format:
   html:
     code-fold: false
-    code-tools: true
+#    Do not display the code (which includes solutions)
+#    code-tools: true
     embed-resources: true
     highlight-style: github
     toc: true
@@ -34,38 +35,45 @@ set.seed(0xdada)
 
 # Goal
 
-In this lab we will learn the basics of multivariate analysis and PCA using a few simple examples.
+In this lab you will learn the basics of multivariate analysis and principal component analysis (PCA) using some simple examples.
 
-Work through this lab by running all the R code to your computer and making sure
-that you understand the input and the output. Make alterations where you seem
-fit. We encourage you to work through this lab with a partner.
+Work through this lab by running the R code to your computer.
+Make sure that you understand the inputs and the outputs.
+You can try out variations and experiment with the code, too.
+We encourage you to work through this lab with a partner.
 
 # Setup
 
 ```{r}
 #| eval: true
 #| echo: true
-# load required packages
-library(GGally)
-library(ggplot2)
-library(pheatmap)
-library(factoextra)
-library(ade4)
+#| message: false
+library("dplyr")
+library("ggplot2")
+library("GGally")
+library("pheatmap")
+library("factoextra")
+library("ade4")
 ```
 
-Get data sets from the web:
+You can either, get data sets from the web,
 
 ```{r}
 #| label: turtlesLoadWeb
 #| eval: false
 #| echo: true
-turtles = read.table(url("https://web.stanford.edu/class/bios221/data/PaintedTurtles.txt"),
-                     header = TRUE)
-download.file(url = "https://web.stanford.edu/class/bios221/data/athletes.RData",
-              destfile = "athletes.RData", mode = "wb")
+turtles = read.table(
+  url("https://web.stanford.edu/class/bios221/data/PaintedTurtles.txt"), 
+  header = TRUE
+)
+download.file(
+  url = "https://web.stanford.edu/class/bios221/data/athletes.RData",
+  destfile = "athletes.RData",
+  mode = "wb"
+)
 ```
 
-Or load them if available locally:
+or load them from local files on your harddrive.
 
 ```{r}
 #| label: turtlesLoadLocal
@@ -73,7 +81,7 @@ Or load them if available locally:
 #| echo: true
 turtles <- read.table("PaintedTurtles.txt", header = TRUE)
 load("athletes.RData")
-
+ls()
 head(turtles)
 athletes[1:3, ]
 ```
@@ -84,57 +92,17 @@ Let's first get to know our data sets.
 
 ## Questions
 
-1. How many athletes / turtles do you have in the data sets?
-2. What's the record distance in the longjump category? And which athlete (number) made this record?
-3. What's the average time across all athletes for the 100m run?
+1. How many athletes and turtles do you have in the data sets?
+2. What is the highest distance in the longjump category? Which athlete (number) made this record?
+3. What is the average time across all athletes for the 100m run?
 4. Can you plot the histogram showing the distribution of the times for the 100m run?
 5. How many athletes of those who run faster than the average in the 100m run, also run faster than the average in the 1500m distance?
 
-```{r }
-#| label: questions1-5Hint
-#| fig-width: 4
-#| fig-height: 4
-#| out-width: "60%"
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
+Hints for Question 5:
 
-#1
-____(athletes)
-____(turtles)
-
-#2
-___(athletes$____)
-_________(athletes$____)
-
-#3
-____(athletes$____)
-
-#4
-____(athletes$____)
-
-#5
-av100  = ____(athletes$____)
-av1500 = ____(athletes$_____)
-
-___( (athletes$____ < av100) & (athletes$_____ < av1500) )
-
-#5 another solution
-dplyr::______(athletes,
-              ____ < mean(____),
-              _____ < mean(_____)) |>
-  ____()
-
-# Hints (question #5):
-# 1. Calculate the average times for 100m run and 1500m run.
-# 2. Compare each athlete's time to the calculated average times.
-# 3. Count how many athletes meet both conditions above.
-
-# Alternative approaches:
-# 1. Use a summary table to examine how mant athletes fall below the average
-# in each type of run.
-# 2. Apply your knowledge of dplyr and its filter() function, and count the rows.
-```
+* Calculate the averages of `m100` and `m1500`.
+* Compute two logical vectors that say, for each athlete, whether their time is better than the average.
+* Count how many athletes meet both conditions
 
 ```{r}
 #| label: questions1-5Solution
@@ -159,57 +127,35 @@ mean(athletes$m100)
 hist(athletes$m100)
 
 #5
-av100  = mean(athletes$m100)
-av1500 = mean(athletes$m1500)
-
-sum( (athletes$m100 < av100) & (athletes$m1500 < av1500) )
-
-#5 alternative solution
-with(athletes, table(m100 < mean(m100), m1500 < mean(m1500)))
-
-#5 yet another solution
-dplyr::filter(athletes,
-              m100 < mean(m100),
-              m1500 < mean(m1500)) |>
-  nrow()
+av100      = mean(athletes$m100)
+av1500     = mean(athletes$m1500)
+better100  = athletes$m100 < av100
+better1500 = athletes$m1500 < av1500
+table(better100, better1500)
 ```
-
 :::
 
-
-It is instructive to first consider 2-dimensional summaries of the data. The function `ggpairs` from the `GGally` package gives a nice summary of the features and how they are correlated with each other.
+Now let us look at two-dimensional visualisations: pairs plots. A convenient way to make them is the function `ggpairs` from the `GGally` package. Let us first explore the turtles data.
 
 ```{r}
 #| label: GGally
 #| eval: true
 #| echo: true
-#| fig-width: 5
-#| fig-height: 5
-#| out-width: "80%"
-ggpairs(turtles[, -1], axisLabels = "none")
+#| message: false
+#| fig-width: 7
+#| fig-height: 7
+#| out-width: "100%"
+ggpairs(turtles)#
 ```
 
 ::: {.callout-note collapse="false"}
 
 ## Questions
 
-1. What do you see on the diagonal? What do the stars indicate next to the correlation value?
+1. What does each of the 16 subpanels show?
 2. Can you repeat this plot for the `athletes` data?
-3. In the lecture, we have seen another way to investigate correlations in the data. Use the `pheatmap` function in the package with the same name, `pheatmap`, to illustrate the pairwise correlations of the features in the athletes data set.
-
-```{r}
-#| label: questions6-7Hint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#2
-_______(________, axisLabels = "none")
-
-
-# Hint:
-# ...
-```
+3. In the lecture, we have seen another way to investigate correlations in the data. Use the `pheatmap` function in the package with the same name, to visualise all pairwise correlations of the results from the ten disciplines in the athletes data set.
+4. Similarly, look at the heatmap of the pairwise correlations of the athletes.
 
 ```{r}
 #| label: questions6-7Solution
@@ -218,10 +164,9 @@ _______(________, axisLabels = "none")
 #| out-width: "100%"
 #| eval: !expr params$include_answers
 #| echo: !expr params$include_answers
+#| results: "asis"
 
-#1
-# Diagonal: histogram displaying the distribution of the different variables.
-# Stars: significant correlation between the two variables
+"Answer 1: The panels on the diagonal show the distributions of each single variable. For the continuous variables length, width and height, the histogram is used. For the categorical variable sex, a barplot with the number of cases for each category. The off-diagonal panels show all $4\times 3 /2$ pairwise comparisons. Pairs of continuous variables are shown with scatterplots and correlation coefficients, pairs of a continuous and a categorical variable are show with stratified (or \"faceted\") histograms and boxplots." 
 
 #2
 ggpairs(athletes, axisLabels = "none")
