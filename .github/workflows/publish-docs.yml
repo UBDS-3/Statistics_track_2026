@@ -16,19 +16,37 @@ jobs:
 
       - uses: r-lib/actions/setup-r@v2
 
-      - name: Cache R packages
-        uses: actions/cache@v4
+      - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          path: ${{ env.R_LIBS_USER }}
-          key: r-pkgs-${{ runner.os }}-GGally-ggplot2-pheatmap-factoextra-ade4
-
-      - name: Install R packages
-        run: Rscript -e 'install.packages(c("GGally","ggplot2","pheatmap","factoextra","ade4"))'
+          # any:: = CRAN, bioc:: = Bioconductor. pak resolves both and
+          # installs required Ubuntu system libraries automatically.
+          packages: |
+            any::GGally
+            any::ggplot2
+            any::pheatmap
+            any::factoextra
+            any::ade4
+            any::readr
+            any::here
+            any::dplyr
+            any::tidyr
+            any::tibble
+            any::skimr
+            any::DataExplorer
+            any::naniar
+            any::summarytools
+            bioc::SummarizedExperiment
+            bioc::DESeq2
+            bioc::plyranges
+            bioc::nullranges
+            bioc::plyxp
+            bioc::tidySummarizedExperiment
+            bioc::iSEE
 
       - uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Render public docs
-        run: ./render.sh --type public --lab multivariate
+        run: ./render.sh --type public --lab multivariate exploratory
 
       - name: Commit and push
         run: |

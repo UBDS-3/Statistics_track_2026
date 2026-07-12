@@ -3,7 +3,7 @@ set -uo pipefail
 
 ALL_TYPES=(solved simplified default public)
 ALL_LABS=(testing exploratory clustering omics ML regression randomness multivariate)
-DEFAULT_ONLY_LABS=(exploratory randomness)
+DEFAULT_ONLY_LABS=(randomness)
 
 usage() {
   echo "Usage: $(basename "$0") --type <type|all> [--lab <labs|all>]
