@@ -51,7 +51,6 @@ We encourage you to work through this lab with a partner.
 library("dplyr")
 library("ggplot2")
 library("GGally")
-library("pheatmap")
 library("factoextra")
 library("ade4")
 ```
@@ -135,6 +134,8 @@ table(better100, better1500)
 ```
 :::
 
+# Visual exploration
+
 Now let us look at two-dimensional visualisations: pairs plots. A convenient way to make them is the function `ggpairs` from the `GGally` package. Let us first explore the turtles data.
 
 ```{r}
@@ -158,67 +159,69 @@ ggpairs(turtles)
 #| eval: !expr params$include_answers
 #| echo: false
 #| results: asis
-cat("The panels on the diagonal show the distributions of each single variable. For the continuous variables length, width and height, the histogram is used. For the categorical variable sex, a barplot with the number of cases for each category is used. The off-diagonal panels show all $4\\times 3 /2$ pairwise comparisons. Pairs of continuous variables are shown with scatterplots and correlation coefficients, pairs of a continuous and a categorical variable are show with stratified (or \"faceted\") histograms and boxplots.")
+cat("The panels on the diagonal show the distributions of each single variable. For the continuous variables length, width and height, the histogram is used. For the categorical variable sex, a barplot with the number of cases for each category is used. The off-diagonal panels show all $4\\times 3 /2$ pairwise comparisons. Pairs of continuous variables are shown with scatterplots and correlation coefficients, pairs of a continuous and a categorical variable are shown with stratified (or \"faceted\") histograms and boxplots.")
 ```
 :::
 
 ::: {.callout-note collapse="false"}
-
-## Questions
+## Question
 
 7. Can you repeat this plot for the `athletes` data?
-8. In the lecture, we have seen another way to investigate correlations in the data. Use the `pheatmap` function in the package with the same name, to visualise all pairwise correlations of the results from the ten disciplines in the athletes data set.
-9. Similarly, look at the heatmap of the pairwise correlations of the athletes.
 
 ```{r}
-#| label: questions6-7Solution
+#| label: question7-Solution
 #| fig-width: 8
 #| fig-height: 8
 #| out-width: "80%"
 #| eval: !expr params$include_answers
 #| echo: !expr params$include_answers
-#| results: "asis"
-
-"Answer 1: The panels on the diagonal show the distributions of each single variable. For the continuous variables length, width and height, the histogram is used. For the categorical variable sex, a barplot with the number of cases for each category. The off-diagonal panels show all $4\times 3 /2$ pairwise comparisons. Pairs of continuous variables are shown with scatterplots and correlation coefficients, pairs of a continuous and a categorical variable are show with stratified (or \"faceted\") histograms and boxplots." 
-
-#2
-ggpairs(athletes, axisLabels = "none")
+ggpairs(athletes)
 ```
+:::
 
+::: {.callout-note collapse="false"}
+## Question
+8. In the lecture, we have seen another way to investigate correlations in the data. Use the `Heatmap` function from the `ComplexHeatmap` package to visualise all pairwise correlations of the results from the ten disciplines in the athletes data set. 
+
+Hint: use the following code to create your favourite colour scale for the heatmap.
 ```{r}
-#| label: questions8Hint
-#| eval: false
-#| echo: true
-# Fill in the blanks to complete the code and answer the question above
-
-#3
-mycolors = colorRampPalette(c("#FFD800", "#0056B9"))(100)
-________(___(________), cellwidth = 20, cellheight = 20,
-         color = mycolors, breaks = seq(-1, +1, length.out = length(mycolors) + 1))
-
-
-# Hint:
-# ...
+#| label: question8-hint
+mycolourscale = circlize::colorRamp2(c(-1, 0, 1), c("#FFD700", "#f0f0f0", "#0057B7"))
 ```
-
 ```{r}
-#| label: questions8Solution
+#| label: question8-Solution
 #| fig-width: 5
 #| fig-height: 5
 #| out-width: "60%"
 #| eval: !expr params$include_answers
 #| echo: !expr params$include_answers
-
-#3
-library("pheatmap")
-mycolors = colorRampPalette(c("#FFD800", "#0056B9"))(100)
-pheatmap(cor(athletes), cellwidth = 20, cellheight = 20,
-         color = mycolors, breaks = seq(-1, +1, length.out = length(mycolors) + 1))
+#| message: false
+library("ComplexHeatmap")
+Heatmap(cor(athletes), col = mycolourscale)
 ```
-
 :::
 
-# Preprocessing the data
+::: {.callout-note collapse="false"}
+## Question
+9. Similarly, look at the heatmap of the pairwise correlations of the athletes.
+
+Hint: the central idea is to compute the correlation as above, but with the transposed version of the matrix, using the R function `t()`. We also center and scale each discipline's results with the function `scale()`, to have mean zero and standard deviation one -- if we do not do that (try!), all the correlations are close to 1, simply reflecting the fact that the outcomes of different disciplines are measured in different units (meters, seconds), and each discipline has a typical numerical range of outcomes. We will explore scaling more deeply in the next section.
+```{r}
+#| label: question9-hint
+transposed_athletes = t(scale(athletes))
+```
+```{r}
+#| label: question9-Solution
+#| fig-width: 7
+#| fig-height: 7
+#| out-width: "60%"
+#| eval: !expr params$include_answers
+#| echo: !expr params$include_answers
+Heatmap(cor(transposed_athletes), col = mycolourscale)
+```
+:::
+
+# Preprocessing
 
 In many cases, different variables are measured in different units and at different scales. As discussed in the lecture, we have various options to transform the data. Here, we elect to standardize the data to a common standard deviation. This rescaling is done using the `scale` function, which subtracts the mean and divides by the standard deviation, so that every column has a unit standard deviation and mean zero.
 
@@ -578,7 +581,7 @@ turtlesc = scale(turtles[, -1])
 #3
 corrs = cor(turtlesc)
 corrs |> round(3)
-pheatmap(corrs, cellwidth = 40, cellheight = 40, color = mycolors)
+Heatmap(corrs, col = mycolourscale)
 ```
 
 :::
