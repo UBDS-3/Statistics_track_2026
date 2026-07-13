@@ -130,6 +130,7 @@ table(better100, better1500)
 
 ```{r}
 #| label: physics
+#| eval: true
 athletes = mutate(athletes,
     m100 = 100/m100,
     m110 = 110/m110,
@@ -363,11 +364,16 @@ reg2 = lm(weight ~ disc, data = scaledathletes)
 a2 = reg2$coefficients[1]
 b2 = reg2$coefficients[2]
 
-pline2 = p + geom_abline(intercept = a2, slope = b2, col = "#FFD800")
-pline2 + geom_segment(
-  aes(y = weight, x = disc, yend = reg2$fitted, xend = disc),
-  color = "#0056B9",
-  arrow = arrow(length = unit(0.15, "cm"))) + coord_flip()
+ggplot(mutate(scaledathletes, zero = 0),
+  aes(y = weight, x = disc)) + geom_point(shape = 1) + 
+  coord_fixed() +
+  geom_abline(intercept = a2, slope = b2, col = "#FFD800") +
+  geom_segment(
+    aes(y = weight, x = disc, yend = reg2$fitted, xend = disc),
+    colour = "#0056B9",
+    arrow = arrow(length = unit(0.15, "cm"))
+    ) + 
+  coord_flip()
 ```
 
 Now let us make a plot that shows all points, as well as both regression lines, i.e., from `lm(disc ~ weight)` as well as `lm(weight ~ disc)`.
