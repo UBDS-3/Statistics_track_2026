@@ -126,6 +126,18 @@ table(better100, better1500)
 ```
 :::
 
+## Physics
+
+```{r}
+#| label: physics
+athletes = mutate(athletes,
+    m100 = 100/m100,
+    m110 = 110/m110,
+    m400 = 400/m400,
+    m1500 = 1500/m1500
+)
+```
+
 # Visual exploration
 
 Now let us look at two-dimensional visualisations: pairs plots. A convenient way to make them is the function `ggpairs` from the `GGally` package. Let us first explore the turtles data.
