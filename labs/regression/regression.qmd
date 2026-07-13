@@ -1,7 +1,7 @@
 ---
 title: Regression
-subtitle: "July 19 - August 2, 2025"
-author: Adapted from Rafael Irizarry & Michael Love <br> by Helena L. Crowell & Wolfgang Huber
+subtitle: "July 13 - July 18, 2026"
+author: R.G. Adapted from Rafael Irizarry & Michael Love <br> by Helena L. Crowell & Wolfgang Huber
 format:
   html:
     code-fold: false
@@ -19,6 +19,234 @@ params:
   answers:    false
   simplified: false
 ---
+
+# A deeper look at the data set in our lecture
+
+In the lecture we considered the data set from Galton, where he provides data on 963 children from 205 families ranging from 1-15 adult children. 29 of the children have non-numeric heights and are excluded.
+
+We will open the data set and do a little preprocessing in order
+to repeat some of the analyses there.  But the data is much richer
+and includes heights of mothers and daughters as well as fathers and sons. So
+one easy extension is to repeat the analysis in the lecture on mothers and daughters.
+Some families had more than one child, so parity and other features can be explored as well.
+
+```{r, message=FALSE, warning=FALSE, cache = FALSE} 
+library(tidyverse) 
+library(HistData) 
+library(rafalib)
+
+set.seed(1983) 
+galton_heights <- GaltonFamilies |> 
+  filter(gender == "male") |> 
+  group_by(family) |> 
+  sample_n(1) |> 
+  ungroup() |> 
+  select(father, childHeight) |> 
+  rename(son = childHeight) 
+``` 
+
+
+Summaries of the data.
+
+
+
+```{r, message=FALSE, warning=FALSE} 
+
+galton_heights |>  
+  summarize(mean(father), sd(father), mean(son), sd(son)) 
+``` 
+
+
+## Plotting:
+
+```{r scatterplot-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="40%", echo=FALSE} 
+galton_heights |> ggplot(aes(father, son)) +  
+  geom_point(alpha = 0.5) 
+``` 
+
+
+## Sampling
+
+```{r} 
+#| echo: true
+r <- sample_n(galton_heights, 25, replace = TRUE) |>  
+  summarize(r = cor(father, son)) |> pull(r) 
+``` 
+
+Now we want to consider resampling repeatedly.  The code below will do that.
+`B` determines how many times you will repeat this, while `N` says how big of a sample to take.
+
+Interesting questions are comparing the variability in the estimate if you change N and what
+do you think might happen if you change B.
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+#| out-width: 100%
+B <- 1000 
+N <- 25 
+r <- replicate(B, { 
+  sample_n(galton_heights, N, replace = TRUE) |>  
+    summarize(r = cor(father, son)) |>  
+    pull(r) 
+}) 
+hist(r, breaks = 20) 
+abline(v = 0.433, col = "red", lwd = 3)
+
+```
+
+More plotting:
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+#| out-width: 100%
+
+galton_heights |>
+  ggplot(aes(father, son)) +
+  geom_point(alpha = 0.5)
+```
+
+Boxplots
+
+```{r boxplot-1-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="100%", echo=FALSE} 
+galton_heights |> mutate(father_strata = factor(round(father))) |>  
+  ggplot(aes(father_strata, son)) +  
+  geom_boxplot() +  
+  geom_point() 
+``` 
+
+Conditional means
+
+```{r conditional-averages-follow-line, fig.align = "center", echo=FALSE, fig.height = 3, fig.width = 3, out.width="100%"} 
+galton_heights |>  
+  mutate(father = round(father)) |>  
+  group_by(father) |> 
+  summarize(son_conditional_avg = mean(son)) |> 
+  ggplot(aes(father, son_conditional_avg)) +  
+  geom_point() 
+``` 
+
+## some simple simulation models
+
+Here you can explore the simple simulations from the lecture. You can change different things like the form of the relationship, the amount of variability in the random part and see how that affects the different estimates.
+
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 5
+
+set.seed(123)
+
+x <- runif(20, 10, 20)
+e <- rnorm(20, sd = 2)
+y <- 3 + 2 * x + e
+
+fit <- lm(y ~ x)
+y_hat <- fitted(fit)
+
+plot(
+  x, y,
+  type = "n",
+  xlab = "",
+  ylab = "",
+  ylim = range(c(y, y_hat)),
+  axes = FALSE
+)
+
+segments(
+  x0 = x,
+  y0 = y,
+  x1 = x,
+  y1 = y_hat,
+  col = "red",
+  lwd = 1
+)
+
+abline(
+  fit,
+  col = "cornflowerblue",
+  lwd = 2
+)
+
+points(
+  x, y,
+  pch = 19,
+  cex = 1.2
+)
+
+box()
+```
+
+
+### Nonlinear models
+
+Here things are more complicated but you can see how we fit a non-linear model and that there are good methods for doing predictions. Again changing different parameters will affect the outputs.
+
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 5
+
+library(splines)
+
+set.seed(123)
+
+x <- runif(20, 10, 20)
+e <- rnorm(20, sd = 2)
+
+f <- function(x) {
+  3 + 2 * x + 5 * sin(pi * (x - 10) / 10)
+}
+
+y <- f(x) + e
+
+fit <- lm(y ~ ns(x, df = 4))
+y_hat <- fitted(fit)
+
+x_grid <- seq(10, 20, length.out = 200)
+y_grid <- predict(fit, newdata = data.frame(x = x_grid))
+
+plot(
+  x, y,
+  type = "n",
+  xlab = "",
+  ylab = "",
+  axes = FALSE,
+  ylim = range(c(y, y_grid))
+)
+
+box()
+
+segments(
+  x0 = x,
+  y0 = y,
+  x1 = x,
+  y1 = y_hat,
+  col = "red",
+  lwd = 1
+)
+
+lines(
+  x_grid,
+  y_grid,
+  col = "cornflowerblue",
+  lwd = 2
+)
+
+points(
+  x, y,
+  pch = 19,
+  cex = 1.2
+)
+```
+
 
 # Colinearity and confounding
 
@@ -77,6 +305,23 @@ ggpairs(dplyr::select(Boston, nox, dis, rm))
 library("corrplot")
 corrplot(cor(Boston), method = "circle", type = "upper", tl.cex = 0.7)
 ```
+
+## Interactions
+
+- return to the interaction question
+- see fit a model without the interaction and examine the parameter estimates
+- then add the interaction - what happens?
+- which model seems more appropriate and why?
+- you could look at regression diagnostics as well - don't limit yourself - use a LLM if you can
+
+```{r}
+
+fit1I = lm(medv ~ dis + rm + lstat + rm*lstat, data = Boston)
+summary(fit1I)
+
+
+```
+
 
 # Blocking and pairing
 

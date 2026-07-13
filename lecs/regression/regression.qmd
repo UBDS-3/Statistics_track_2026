@@ -1,0 +1,948 @@
+---
+title: "Regression Basics"
+author: "Robert Gentleman"
+format:
+  revealjs:
+    theme: [simple, ./custom.scss]
+---
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+
+library(GGally)
+library(ggplot2)
+
+
+```
+## Outline
+
+- basic ideas behind statistical methods
+- why regression is an important tool for understanding data
+- how to fit and interpret some regression models
+
+## Where do data come from?
+
+- experiments where someone has performed a task, usually varying some of the treatments or exposures and measuring outputs
+
+- random sampling of some reasonably well defined population with the intention of making valid statements about that population
+
+- clinical trials are like experiments but we don't control how the patients are selected
+
+## Basics of Statistical Methods
+
+::: {.incremental}
+
+- when data are generated with variability we must account for that variation in our interpretation
+- suppose we want to compare the cost to rent an apartment in two different cites
+- in city A we sample 100 renters and get the mean rent per month of $500
+- in city B we sample 100 renters and get the mean rent per month of $800
+- which city is most expensive to rent in?
+- you can't tell without knowing how much variation there is
+
+:::
+
+## Basics of Statistical Methods
+
+::: {.incremental}
+
+- *Statistics is about coming to conclusions in the face of uncertainty*, Wild and Seber, 2000.
+
+- given data that are measured with error we need to extract information and estimate uncertainty
+
+- we use models to help better estimate quantities of interest when they are affected by other factors
+
+- A challenging part of the analysis is to identify the appropriate way to estimate the variation in the data
+
+- Failing to do these steps well means you can (and often do) get the wrong answer.
+
+:::
+
+## Case study: is height hereditary?
+
+- To understand the concepts of correlation and simple regression, we actually use the dataset from which regression was born.
+
+- The example is from genetics.
+
+- Francis Galton studied the variation and heredity of human traits.
+
+- Among many other traits, Galton collected and studied height data from families to try to understand heredity.
+
+
+
+## Case study: is height hereditary?
+
+- While doing this, he developed the concepts of correlation and regression.
+
+- At the time this data was collected, our knowledge of genetics was limited compared to what we know today.
+
+- A very specific question Galton tried to answer was: **how well can we predict a child's height based on the parents' height?**
+
+
+
+## Case study: is height hereditary?
+
+
+- We have access to Galton's family height data through the **HistData** package.
+
+- This data contains heights on several dozen families: mothers, fathers, daughters, and sons.
+
+- To imitate Galton's analysis, we will create a dataset with the heights of fathers and a randomly selected son of each family:
+
+```{r, message=FALSE, warning=FALSE, cache = FALSE} 
+library(tidyverse) 
+library(HistData) 
+set.seed(1983) 
+galton_heights <- GaltonFamilies |> 
+  filter(gender == "male") |> 
+  group_by(family) |> 
+  sample_n(1) |> 
+  ungroup() |> 
+  select(father, childHeight) |> 
+  rename(son = childHeight) 
+``` 
+
+- Suppose we were asked to summarize the father and son data.
+
+```{r, message=FALSE, warning=FALSE} 
+
+galton_heights |>  
+  summarize(mean(father), sd(father), mean(son), sd(son)) 
+``` 
+
+## Case study: is height hereditary?
+
+- This summary fails to describe an important characteristic of the data: 
+
+
+```{r scatterplot-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="40%", echo=FALSE} 
+galton_heights |> ggplot(aes(father, son)) +  
+  geom_point(alpha = 0.5) 
+``` 
+
+## The correlation coefficient
+
+
+- The correlation coefficient is always between -1 and 1.
+
+- Pearson correlation measures a linear relationship between x and y
+
+- the sample correlation coefficient is 1 or -1 only when x and y lie exactly on a straight line.
+
+- The correlation, computed with the function `cor`, between father and son's heights is about 0.5:
+
+::: {.large-output}
+
+```{r}
+#| echo: true
+  
+galton_heights |> summarize(r = cor(father, son)) |> pull(r) 
+``` 
+
+:::
+
+---
+
+
+## The correlation coefficient
+
+-  Correlations ranging from -0.9 to 0.99:
+
+```{r what-correlation-looks-like, fig.align = "center", echo=FALSE} 
+n <- 250 
+cors <- c(-0.9,-0.5,0,0.5,0.9,0.99) 
+sim_data <- lapply(cors,function(r) MASS::mvrnorm(n,c(0,0), matrix(c(1,r,r,1),2,2))) 
+sim_data <- Reduce(rbind, sim_data) 
+sim_data <- cbind( rep(cors, each = n), sim_data) 
+colnames(sim_data) <- c("r","x","y") 
+as.data.frame(sim_data) |>  
+  ggplot(aes(x,y)) +  
+  facet_wrap(~r) +  
+  geom_point(alpha = 0.5) + 
+  geom_vline(xintercept = 0,lty = 2) +  
+  geom_hline(yintercept = 0,lty = 2)  
+``` 
+
+## Sample correlation is random
+
+- Before we continue connecting correlation to regression, let's remind ourselves about random variability.
+
+- In most applications, we observe data that includes random variation.
+
+- For example, in many cases, we do not observe data for the entire population of interest, but rather for a random sample.
+
+- As with the average and standard deviation, the *sample correlation* is the most commonly used estimate of the population correlation.
+
+
+## Sample correlation is random
+
+- while the true correlation in the population is fixed but unkownn
+
+- the correlation we compute on the sample and use as a summary is a random variable.
+
+- By way of illustration, let's assume that the `r nrow(galton_heights)` pairs of fathers and sons is our entire population.
+
+- A less fortunate geneticist can only afford measurements from a random sample of 25 pairs.
+
+- The sample correlation can be computed with:
+
+```{r} 
+#| echo: true
+r <- sample_n(galton_heights, 25, replace = TRUE) |>  
+  summarize(r = cor(father, son)) |> pull(r) 
+``` 
+
+- `r` is a random variable.
+
+## Sample correlation is random
+
+- We can run a Monte Carlo simulation to see its distribution:
+
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+#| out-width: 100%
+B <- 1000 
+N <- 25 
+r <- replicate(B, { 
+  sample_n(galton_heights, N, replace = TRUE) |>  
+    summarize(r = cor(father, son)) |>  
+    pull(r) 
+}) 
+hist(r, breaks = 20) 
+abline(v = 0.433, col = "red", lwd = 3)
+
+```
+
+:::
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+#| out-width: 100%
+
+galton_heights |>
+  ggplot(aes(father, son)) +
+  geom_point(alpha = 0.5)
+```
+
+:::
+
+::::
+
+
+
+## Sample correlation is random
+
+- We see that the observed mean of `r` is close to the population correlation of $0.433$
+
+```{r} 
+mean(r) 
+``` 
+
+- and that the standard error is large relative to the range of values `r` can take:
+
+```{r} 
+sd(r) 
+``` 
+
+- So, when interpreting correlations, remember that correlations derived from samples are estimates with uncertainty.
+
+
+## Correlation is not always useful 
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+
+```{r ascombe-quartet, echo=FALSE,fig.width=7, fig.height=5.5, out.width="100%", fig.align="center"} 
+anscombe |> mutate(row = seq_len(n())) |> 
+  gather(name, value, -row) |>  
+  separate(name, c("axis", "group"), sep=1) |> 
+  spread(axis, value) |> select(-row) |> 
+  ggplot(aes(x,y)) + 
+  facet_wrap(~group)  + 
+  geom_smooth(method="lm", fill=NA, fullrange=TRUE) +  
+  geom_point() 
+#+  geom_point(bg="orange", color="red", cex=3, pch=21) 
+``` 
+
+:::
+
+::: {.column width="50%"}
+
+- The following four artificial datasets, referred to as Anscombe's quartet, famously illustrate this point.
+
+- All these pairs have a correlation of 0.82:
+
+- To help us understand when correlation is meaningful as a summary statistic, we return to the example of predicting a son's height using his father's height.
+
+:::
+
+::::
+
+## An Important Observation
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+```{r}
+#| echo: false
+#| fig-width: 4
+#| fig-height: 3
+#| out-width: 100%
+
+galton_heights |>
+  ggplot(aes(father, son)) +
+  geom_point(alpha = 0.5)
+```
+
+:::
+
+::: {.column width="50%"}
+
+- notice that there is a strong relationship between the height of a father and his son
+- we will get better estimates if we can use the height of the father 
+- statistical models are how we do that
+- and we will first explore an *idea* called conditional expectation
+
+:::
+
+::::
+
+
+## Conditional expectations
+
+
+- Suppose we are asked to guess the height of a randomly selected son and we don't know his father's height.
+
+- Because the distribution of sons' heights is approximately normal, we know the average height, `r round(mean(galton_heights$son), 1)`, is the value with the highest proportion and would be the prediction with the highest chance of minimizing the error.
+
+- But what if we are told that the father is taller than average, say 72 inches tall, do we still guess `r round(mean(galton_heights$son), 1)` for the son?
+
+- The statistical notation for the conditional expectation is:
+$$
+\mbox{E}(Y \mid X = x) 
+$$
+- with $x$ representing the fixed value that defines that subset, for example 72 inches.
+- this represents the average value of the variable named $Y$ when the variable named $X$ has value $x$
+
+
+## Conditional expectations
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+
+- we divide the data up into groups depending on the father's height
+
+- for each group we compute a boxplot
+
+- when we examine the boxplots we see that the son's heights really change depending on the father's height
+
+
+:::
+
+::: {.column width="50%"}
+
+```{r boxplot-1-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="100%", echo=FALSE} 
+galton_heights |> mutate(father_strata = factor(round(father))) |>  
+  ggplot(aes(father_strata, son)) +  
+  geom_boxplot() +  
+  geom_point() 
+``` 
+
+:::
+
+::::
+
+
+## Conditional expectations
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+
+- Here we plot the means of the son's height for a binned value of the father's height
+- These would be reasonable estimates to use
+- But they waste information and are less precise than they could be
+- We introduce models as ways to be more specific about the form of the relationship between the y's and the x's **and** to improve the precision of our estimates
+
+:::
+
+::: {.column width="50%"}
+
+```{r conditional-averages-follow-line, fig.align = "center", echo=FALSE, fig.height = 3, fig.width = 3, out.width="100%"} 
+galton_heights |>  
+  mutate(father = round(father)) |>  
+  group_by(father) |> 
+  summarize(son_conditional_avg = mean(son)) |> 
+  ggplot(aes(father, son_conditional_avg)) +  
+  geom_point() 
+``` 
+
+:::
+
+::::
+
+
+## Regression
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 5
+
+set.seed(123)
+
+x <- runif(20, 10, 20)
+e <- rnorm(20, sd = 2)
+y <- 3 + 2 * x + e
+
+fit <- lm(y ~ x)
+y_hat <- fitted(fit)
+
+plot(
+  x, y,
+  type = "n",
+  xlab = "",
+  ylab = "",
+  ylim = range(c(y, y_hat)),
+  axes = FALSE
+)
+
+segments(
+  x0 = x,
+  y0 = y,
+  x1 = x,
+  y1 = y_hat,
+  col = "red",
+  lwd = 1
+)
+
+abline(
+  fit,
+  col = "cornflowerblue",
+  lwd = 2
+)
+
+points(
+  x, y,
+  pch = 19,
+  cex = 1.2
+)
+
+box()
+```
+
+:::
+
+::: {.column width="50%"}
+
+- the regression line is in blue
+- the method used to estimate it is called least squares (LS)
+- the LS solution minimizes the length of the red lines (they represent the *residuals*)
+
+- we write this as  $y = \alpha + \beta \cdot x + \epsilon$
+
+- and our regression line is: $E[Y|x] = \widehat{\alpha} + \widehat{\beta} \cdot x$
+
+:::
+
+::::
+
+## The regression line
+
+- we can show that the estimates of the intercept $\widehat{\alpha}$ and the slope $\widehat{\beta}$ are good in a variety of ways
+
+- and we can use the estimated regression line to make predictions
+
+- $E[Y| x_{new}] =  \widehat{\alpha} + \widehat{\beta} \cdot x_{new}$
+
+
+## More general models
+
+::::: {.columns}
+
+:::: {.column width="50%"}
+
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-height: 5
+
+library(splines)
+
+set.seed(123)
+
+x <- runif(20, 10, 20)
+e <- rnorm(20, sd = 2)
+
+f <- function(x) {
+  3 + 2 * x + 5 * sin(pi * (x - 10) / 10)
+}
+
+y <- f(x) + e
+
+fit <- lm(y ~ ns(x, df = 4))
+y_hat <- fitted(fit)
+
+x_grid <- seq(10, 20, length.out = 200)
+y_grid <- predict(fit, newdata = data.frame(x = x_grid))
+
+plot(
+  x, y,
+  type = "n",
+  xlab = "",
+  ylab = "",
+  axes = FALSE,
+  ylim = range(c(y, y_grid))
+)
+
+box()
+
+segments(
+  x0 = x,
+  y0 = y,
+  x1 = x,
+  y1 = y_hat,
+  col = "red",
+  lwd = 1
+)
+
+lines(
+  x_grid,
+  y_grid,
+  col = "cornflowerblue",
+  lwd = 2
+)
+
+points(
+  x, y,
+  pch = 19,
+  cex = 1.2
+)
+```
+
+::::
+
+:::: {.column width="50%"}
+
+- we want to choose a candidate that is smooth (usually) and where we try to minize the distance between the observed data and the smooth fit
+
+- then we have:
+
+::: {.highlight-equation}
+
+$E[Y|x] = s(x) + \epsilon$
+:::
+
+::: {.highlight-equation}
+
+$E[Y|x] = \widehat{s}(x)$
+
+:::
+
+- predictions are 
+
+::: {.highlight-equation}
+
+$E[Y|x_{new}] = \widehat{s}(x_{new})$
+
+
+:::
+
+::::
+
+:::::
+
+## How should we think about the changes in height
+
+- when data are random we often don't want to use the units they were measured in for comparisons
+
+- the reason is that we want to make the same conclusions whether we measure height in inches or in meters
+
+- so when the data are approximately Normal$(\mu, \sigma)$ we measure distance in units that correspond to $\sigma$
+
+- the change in y is typically not assessed in the units of y (inches in our example)
+
+- it is more important to think of the change as a function of the variability in y and specifically the number of "SDs"
+
+## Conditional expectations
+
+```{r}
+#| echo: false
+
+conditional_avg <- galton_heights |>  
+  filter(round(father) == 72) |> 
+  summarize(avg = mean(son)) |>  
+  pull(avg) 
+#conditional_avg 
+``` 
+
+
+- A father that is 72 inches tall is about 1 SD taller than the mean height of fathers
+
+- our prediction for the height of the son is: `r conditional_avg` 
+
+- which is also taller than the average height of sons 
+
+- **but** only `r round((conditional_avg - mean(galton_heights$son)) /sd(galton_heights$son),2)` standard deviations larger than the height of the average son.
+
+- The sons of 72 inch fathers have *regressed* towards the average height.
+
+
+## Regression improves precision
+
+- Let's compare the two approaches to prediction that we have presented:
+
+  1. Round fathers' heights to closest inch, stratify, and then take the average.
+
+  2. Compute the regression line and use it to predict.
+
+- We use a Monte Carlo simulation sampling $N=50$ families:
+
+## Regression improves precision
+:::: {.columns}
+
+::: {.column width="50%"}
+
+
+```{r} 
+#| echo: true
+
+
+B <- 1000 
+N <- 50 
+set.seed(1983) 
+conditional_avg <- replicate(B, { 
+  dat <- sample_n(galton_heights, N) 
+  dat |> filter(round(father) == 72) |>  
+    summarize(avg = mean(son)) |>  
+    pull(avg) 
+  }) 
+regression_prediction <- replicate(B, { 
+  dat <- sample_n(galton_heights, N) 
+  mu_x <- mean(dat$father) 
+  mu_y <- mean(dat$son) 
+  s_x <- sd(dat$father) 
+  s_y <- sd(dat$son) 
+  r <- cor(dat$father, dat$son) 
+  mu_y + r*(72 - mu_x)/s_x*s_y 
+}) 
+``` 
+
+:::
+::: {.column width="50%"}
+
+- Although the expected value of these two random variables is about the same:
+
+```{r} 
+#| echo: true
+
+mean(conditional_avg, na.rm = TRUE) 
+mean(regression_prediction) 
+``` 
+
+- The standard error for the regression prediction is substantially smaller:
+
+```{r} 
+#| echo: true
+
+sd(conditional_avg, na.rm = TRUE) 
+sd(regression_prediction) 
+``` 
+
+:::
+
+::::
+
+## Regression improves precision
+
+- The prediction obtained with the regression line is therefore much more stable than the prediction obtained using the conditional mean.
+
+- There is an intuitive reason for this.
+
+- The conditional average is computed on a relatively small subset: the fathers that are about 72 inches tall.
+
+- In fact, in some of the permutations we have no data, which is why we used `na.rm=TRUE` in our simulation.
+
+- The regression line is estimated using all the data.
+
+
+## Multivariate Regression
+
+- if one variable is good - then **two** variables must be better....
+
+
+$$
+Y = \alpha + \beta_1 X_1 + \beta_2 X_2 + \ldots + \beta_k X_k + \epsilon
+$$ 
+ where again we assume $\epsilon ~ N(0, \sigma^2)$
+ 
+ - we can fit these models using least squares as well to get estimates of the model parameters and make predictions
+ 
+ - as before we will need to engage in a substantial amount of model building and diagnostic assessment
+ 
+## An Example: The Boston Housing Data
+
+- data on housing prices as a market measure of the value people place on environmental quality. 
+- assumes that a home's price reflects not only the house itself but also desirable neighborhood characteristics such as cleaner air, lower crime, better schools, and access to jobs. 
+- they hoped that by modeling house prices while controlling for these other characteristics, they could estimate the economic value of improved air quality.
+
+- we will return to this data in the lab
+
+## Boston Housing Data
+```{r}
+#| label: colinear-1
+#| message: false
+#| echo: false
+#| warning: false
+library("MASS")
+data("Boston")
+#head(Boston)
+```
+
+
+```{r}
+library(DT)
+#| label: bostonanno
+#| echo: false
+bostonanno = read.table(textConnection("
+varname|meaning
+zn|proportion of residential land zoned for lots over 25,000 sq.ft
+indus|proportion of non-retail business acres per town
+chas|Charles River proximity (1 if tract bounds river; 0 otherwise)
+nox|nitrogen oxides concentration (parts per 10 million)
+rm|average number of rooms per dwelling
+age|proportion of owner-occupied units built prior to 1940
+dis|weighted mean of distances to five Boston employment centres
+rad|index of accessibility to radial highways
+tax|full-value property-tax rate per $10,000
+ptratio|pupil-teacher ratio by town
+black|$1000(b−0.63)^2$, where $b$ is the proportion of blacks
+lstat|lower status of the population (percent)
+medv|median value of owner-occupied homes in $1000s"), sep = "|", header = TRUE)
+datatable(
+  bostonanno,
+  rownames = FALSE,
+  options = list(
+    dom = "t",
+    paging = FALSE,
+    searching = FALSE,
+    info = FALSE,
+    scrollX = TRUE,
+    scrollY = "400px"
+  )
+)
+#knitr::kable(bostonanno)
+```
+
+## Boston Housing Data
+
+```{r}
+#| echo: true
+fit1 = lm(medv ~ dis + rm, data = Boston)
+summary(fit1)
+```
+
+
+## Model diagnostics: Residual Plot
+
+```{r}
+#| echo: true
+
+plot(fit1$fitted.values, fit1$residuals, xlab="Residuals", ylab="Fitted Values", pch=19, col="slategrey")
+```
+
+## Pairs Plot
+:::: {.columns}
+
+::: {.column width="60%"}
+
+
+```{r}
+#| fig-width: 8
+#| fig-height: 8
+#| out-width: 100%
+GGally::ggpairs(
+  Boston,
+  columns = c("medv", "rm", "dis", "nox", "crim"),
+  lower = list(
+    continuous = wrap("points", alpha = 0.4, size = 0.7)
+  ),
+  upper = list(
+    continuous = wrap("cor", size = 4)
+  ),
+  diag = list(
+    continuous = wrap("densityDiag", alpha = 0.5)
+  ),
+  progress = FALSE
+) +
+  theme_bw()
+```
+
+:::
+::: {.column width="40%"}
+
+- notice the very odd behavior of some of the features
+- there are outliers, limits of detection, non-linearty
+- and potential interactions
+- this is a challenge to fit and interpret
+
+:::
+
+::::
+
+
+## Multivariate Regression: Interactions
+
+- sometimes the effect of $X_i$ depends on the value (level) of $X_j$
+
+- E.g. Smoking and asbestos each increase the risk of lung cancer, but together they produce a much greater increase than either exposure alone.
+
+- if we believe there might be an interaction then we fit it by using special syntax, $X_i * X_j$
+
+## Interactions
+
+```{r}
+#| label: ii2
+#| echo: true
+fit1I = lm(medv ~ dis + rm + lstat + rm*lstat, data = Boston)
+summary(fit1I)
+
+```
+
+
+## Boston Housing Data
+
+- We do two linear regressions with $y$ the house value, and two predictors (`dis` and `rm`), or three (in addition, `nox`).
+
+- what changes?
+
+```{r}
+#| label: colinear-2
+#| echo: true
+#fit1 = lm(medv ~ dis + rm, data = Boston)
+coef(fit1)
+fit2 = lm(medv ~ dis + rm + nox, data = Boston)
+coef(fit2)
+```
+
+## Collinearity
+
+```{r}
+fit3 = lm(medv ~ dis + rm + rad + tax, data = Boston)
+summary(fit3)
+
+```
+
+## Collinearity
+- RAD – TAX have a correlation of about 0.9
+
+```{r}
+fit4 = lm(medv ~ dis + rm + rad, data = Boston)
+summary(fit4)
+```
+
+## Simpson's Paradox
+
+- one of the reasons that we need to be careful with multivariate models is that the potential covariates have very particular effects
+
+
+## Simpson's Paradox
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+
+```{r simpsons-paradox, echo=FALSE}
+N <- 100
+Sigma <- matrix(c(1,0.75,0.75, 1), 2, 2)*1.5
+means <- list(c(x = 11, y = 3), 
+              c(x = 9, y = 5), 
+              c(x = 7, y = 7), 
+              c(x = 5, y = 9), 
+              c(x = 3, y = 11))
+dat <- lapply(means, function(mu){
+  res <- MASS::mvrnorm(N, mu, Sigma)
+  colnames(res) <- c("x", "y")
+  res
+})
+
+dat <- do.call(rbind, dat) |> 
+  as_tibble() |>
+  mutate(z = as.character(rep(seq_along(means), each = N)))
+
+dat |> ggplot(aes(x, y)) + geom_point(alpha = 0.5) +
+  ggtitle(paste("Correlation = ", round(cor(dat$x, dat$y), 2))) +
+theme(
+    plot.title = element_text(size = 20)
+  )
+```
+
+You can see that $X$ and $Y$ are negatively correlated. However, once we stratify by $Z$ (shown in different colors below), another pattern emerges:
+
+:::
+::: {.column width="50%"}
+
+```{r simpsons-paradox-explained, echo=FALSE}
+means <- do.call(rbind, means) |> 
+  as_tibble() |>
+  mutate(z = as.character(seq_along(means)))
+  
+corrs <- dat |> group_by(z) |> summarize(cor = cor(x, y)) |> pull(cor)
+
+dat |> ggplot(aes(x, y, color = z)) + 
+  geom_point(show.legend = FALSE, alpha = 0.5) +
+  ggtitle(paste("Correlations =",  paste(signif(corrs,2), collapse = " "))) +
+  theme(plot.title = element_text(size = 20)) +
+  annotate("text", x = means$x, y = means$y, label = paste("z =", means$z), cex = 5)  
+```
+
+It is really $Z$ that is negatively correlated with $X$. If we stratify by $Z$, the $X$ and $Y$ are actually positively correlated, as seen in the plot above.
+
+
+:::
+::::
+
+## Confounding
+
+- When we are unable to randomly assign each individual to a treatment or control groups,
+confounding becomes particularly prevalent. 
+
+- Confounding occurs when a third variable is associated with both the exposure and the outcome, creating a misleading or distorted estimate of their relationship.
+
+- A confounder is not part of the causal pathway and should be addressed through study design or analysis, such as randomization, restriction, matching, stratification, or regression adjustment.
+
+- For instance, consider estimating the effect of eating fast foods on life expectancy using data collected from a random sample of people in New York City. 
+
+- Fast food consumers are more likely to be smokers, drinkers, and have
+lower incomes. 
+
+- Consequently, a naive regression model may lead to an overestimate of the
+negative health effects of fast food. 
