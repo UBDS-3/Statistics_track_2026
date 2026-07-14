@@ -20,7 +20,7 @@ params:
   simplified: false
 ---
 
-# A deeper look at the data set in our lecture
+# Galton's height data
 
 In the lecture we considered the data set from Galton, where he provides data on 963 children from 205 families ranging from 1-15 adult children. 29 of the children have non-numeric heights and are excluded.
 
@@ -31,9 +31,9 @@ one easy extension is to repeat the analysis in the lecture on mothers and daugh
 Some families had more than one child, so parity and other features can be explored as well.
 
 ```{r, message=FALSE, warning=FALSE, cache = FALSE} 
-library(tidyverse) 
-library(HistData) 
-library(rafalib)
+library("tidyverse") 
+library("HistData") 
+library("rafalib")
 
 set.seed(1983) 
 galton_heights <- GaltonFamilies |> 
@@ -47,7 +47,6 @@ galton_heights <- GaltonFamilies |>
 
 
 Summaries of the data.
-
 
 
 ```{r, message=FALSE, warning=FALSE} 
@@ -84,7 +83,7 @@ do you think might happen if you change B.
 #| fig-align: center
 #| fig-height: 3
 #| fig-width: 4
-#| out-width: 100%
+#| out-width: "60%"
 B <- 1000 
 N <- 25 
 r <- replicate(B, { 
@@ -104,8 +103,7 @@ More plotting:
 #| fig-align: center
 #| fig-height: 3
 #| fig-width: 4
-#| out-width: 100%
-
+#| out-width: "60%"
 galton_heights |>
   ggplot(aes(father, son)) +
   geom_point(alpha = 0.5)
@@ -113,7 +111,8 @@ galton_heights |>
 
 Boxplots
 
-```{r boxplot-1-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="100%", echo=TRUE} 
+```{r boxplot-1-run, fig.align = "center", fig.height = 3, fig.width = 3, echo=TRUE} 
+#| out-width: "60%"
 galton_heights |> mutate(father_strata = factor(round(father))) |>  
   ggplot(aes(father_strata, son)) +  
   geom_boxplot() +  
@@ -131,7 +130,7 @@ galton_heights |>
   geom_point() 
 ``` 
 
-## some simple simulation models
+## Some simple simulation models
 
 Here you can explore the simple simulations from the lecture. You can change different things like the form of the relationship, the amount of variability in the random part and see how that affects the different estimates.
 
@@ -248,7 +247,7 @@ points(
 ```
 
 
-# Colinearity and confounding
+# Colinearity and confounding: Boston housing data
 
 We use a "classical" data science / ML data set, the Boston housing data, a dataframe with 506 rows and 14 columns.
 
@@ -315,15 +314,12 @@ corrplot(cor(Boston), method = "circle", type = "upper", tl.cex = 0.7)
 - you could look at regression diagnostics as well - don't limit yourself - use a LLM if you can
 
 ```{r}
-
 fit1I = lm(medv ~ dis + rm + lstat + rm*lstat, data = Boston)
 summary(fit1I)
-
-
 ```
 
 
-# Blocking and pairing
+# Blocking and pairing: Fitness data
 
 ```{r}
 #| label: pairing-1
@@ -366,7 +362,7 @@ ggplot(FitnessW, aes(x = Before, y = After)) + geom_point() + geom_abline(col = 
 
 
 
-# Contrasts and interactions
+# Contrasts and interactions: Spider legs data
 
 We use a dataset that compares the friction coefficients on the different legs of a spider. Specifically, we will ask whether more friction comes from a pushing or pulling motion of the leg. The original paper from which the data originate:
 
