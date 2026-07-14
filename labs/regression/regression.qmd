@@ -511,7 +511,11 @@ imagemat(X, main="Model matrix for LM with one variable")
 
 Now we show the coefficient estimates from the linear model in a diagram with arrows (code not shown).
 
-```{r spider_main_coef, fig.cap="Diagram of the estimated coefficients in the linear model. The green arrow indicates the Intercept term, which goes from zero to the mean of the reference group (here the 'pull' samples). The orange arrow indicates the difference between the push group and the pull group, which is negative in this example. The circles show the individual samples, jittered horizontally to avoid overplotting.", echo=TRUE}
+```{r}
+#| label: spider_main_coef
+#| fig.cap: "Diagram of the estimated coefficients in the linear model. The green arrow indicates the Intercept term, which goes from zero to the mean of the reference group (here the 'pull' samples). The orange arrow indicates the difference between the push group and the pull group, which is negative in this example. The circles show the individual samples, jittered horizontally to avoid overplotting."
+#| code-fold: true
+#| code-summary: "Show the code"
 stripchart(
     split(spider.sub$friction, spider.sub$type),
     vertical=TRUE, method="jitter", pch=1,
@@ -583,7 +587,11 @@ coefs
 
 We can make the same plot as before, with arrows for each of the estimated coefficients in the model (code not shown).
 
-```{r spider_interactions, fig.cap="Diagram of the estimated coefficients in the linear model. As before, the teal-green arrow represents the Intercept, which fits the mean of the reference group (here, the pull samples for leg L1). The purple, pink, and yellow-green arrows represent differences between the three other leg groups and L1. The orange arrow represents the difference between the push and pull samples for all groups.",echo=TRUE}
+```{r}
+#| label: spider_interactions
+#| fig.cap: "Diagram of the estimated coefficients in the linear model. As before, the teal-green arrow represents the Intercept, which fits the mean of the reference group (here, the pull samples for leg L1). The purple, pink, and yellow-green arrows represent differences between the three other leg groups and L1. The orange arrow represents the difference between the push and pull samples for all groups."
+#| code-fold: true
+#| code-summary: "Show the code"
 spider$group <- factor(paste0(spider$leg, spider$type))
 stripchart(split(spider$friction, spider$group),
            vertical=TRUE, pch=1, method="jitter", las=2, xlim=c(0,11), ylim=c(0,2))
@@ -747,7 +755,11 @@ Here is where the plot with arrows really helps us interpret the coefficients. T
 
 Now, as we have eight terms in the model and eight parameters, you can check that the tips of the arrowheads are exactly equal to the group means (code not shown).
 
-```{r spider_interactions2, fig.cap="Diagram of the estimated coefficients in the linear model. In the design with interaction terms, the orange arrow now indicates the push vs. pull difference only for the reference group (L1), while three new arrows (yellow, brown and grey) indicate the additional push vs. pull differences in the non-reference groups (L2, L3 and L4) with respect to the reference group.",echo=TRUE}
+```{r}
+#| label: spider_interactions2
+#| fig.cap: "Diagram of the estimated coefficients in the linear model. In the design with interaction terms, the orange arrow now indicates the push vs. pull difference only for the reference group (L1), while three new arrows (yellow, brown and grey) indicate the additional push vs. pull differences in the non-reference groups (L2, L3 and L4) with respect to the reference group."
+#| code-fold: true
+#| code-summary: "Show the code"
 stripchart(split(spider$friction, spider$group),
            vertical=TRUE, pch=1, method="jitter", las=2, xlim=c(0,11), ylim=c(0,2))
 cols <- hcl.colors(8, "Set 2")
