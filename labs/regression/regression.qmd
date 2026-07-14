@@ -11,6 +11,14 @@ format:
     toc: true
     toc-depth: 4
     code-line-numbers: false
+    monofont: "Fira Code"
+    include-in-header:
+      text: |
+        <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+        <style>
+        code, pre { font-family: 'Fira Code', monospace; font-variant-ligatures: contextual; }
+        </style>
+lightbox: true
 knitr:
   opts_chunk:
     R.options:
@@ -260,8 +268,8 @@ head(Boston)
 ```
 
 ```{r}
-#| label: bostonanno
-#| echo: true
+#| label: bostonanno1
+#| echo: false
 bostonanno = read.table(textConnection("
 varname|meaning
 zn|proportion of residential land zoned for lots over 25,000 sq.ft
@@ -277,6 +285,10 @@ ptratio|pupil-teacher ratio by town
 black|$1000(b−0.63)^2$, where $b$ is the proportion of blacks
 lstat|lower status of the population (percent)
 medv|median value of owner-occupied homes in $1000s"), sep = "|", header = TRUE)
+```
+```{r}
+#| label: bostonanno2
+#| echo: true
 knitr::kable(bostonanno)
 ```
 
