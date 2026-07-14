@@ -59,7 +59,7 @@ galton_heights |>
 
 ## Plotting:
 
-```{r scatterplot-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="40%", echo=FALSE} 
+```{r scatterplot-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="40%", echo=TRUE} 
 galton_heights |> ggplot(aes(father, son)) +  
   geom_point(alpha = 0.5) 
 ``` 
@@ -80,7 +80,7 @@ Interesting questions are comparing the variability in the estimate if you chang
 do you think might happen if you change B.
 
 ```{r}
-#| echo: false
+#| echo: true
 #| fig-align: center
 #| fig-height: 3
 #| fig-width: 4
@@ -100,7 +100,7 @@ abline(v = 0.433, col = "red", lwd = 3)
 More plotting:
 
 ```{r}
-#| echo: false
+#| echo: true
 #| fig-align: center
 #| fig-height: 3
 #| fig-width: 4
@@ -113,7 +113,7 @@ galton_heights |>
 
 Boxplots
 
-```{r boxplot-1-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="100%", echo=FALSE} 
+```{r boxplot-1-run, fig.align = "center", fig.height = 3, fig.width = 3, out.width="100%", echo=TRUE} 
 galton_heights |> mutate(father_strata = factor(round(father))) |>  
   ggplot(aes(father_strata, son)) +  
   geom_boxplot() +  
@@ -122,7 +122,7 @@ galton_heights |> mutate(father_strata = factor(round(father))) |>
 
 Conditional means
 
-```{r conditional-averages-follow-line, fig.align = "center", echo=FALSE, fig.height = 3, fig.width = 3, out.width="100%"} 
+```{r conditional-averages-follow-line, fig.align = "center", echo=TRUE, fig.height = 3, fig.width = 3, out.width="100%"} 
 galton_heights |>  
   mutate(father = round(father)) |>  
   group_by(father) |> 
@@ -137,7 +137,7 @@ Here you can explore the simple simulations from the lecture. You can change dif
 
 
 ```{r}
-#| echo: false
+#| echo: true
 #| fig-width: 6
 #| fig-height: 5
 
@@ -190,7 +190,7 @@ Here things are more complicated but you can see how we fit a non-linear model a
 
 
 ```{r}
-#| echo: false
+#| echo: true
 #| fig-width: 6
 #| fig-height: 5
 
@@ -262,7 +262,7 @@ head(Boston)
 
 ```{r}
 #| label: bostonanno
-#| echo: false
+#| echo: true
 bostonanno = read.table(textConnection("
 varname|meaning
 zn|proportion of residential land zoned for lots over 25,000 sq.ft
@@ -418,7 +418,7 @@ ggplot(spider, aes(y = friction, x = leg)) + geom_beeswarm() +
 ```{r}
 #| label: spiderdataold
 #| eval: false
-#| echo: false
+#| echo: true
 boxplot(spider$friction ~ spider$type * spider$leg,
         col=c("grey90","grey40"), las = 2,
         main="Comparison of friction coefficients of different leg pairs")
@@ -503,7 +503,7 @@ imagemat(X, main="Model matrix for LM with one variable")
 
 Now we show the coefficient estimates from the linear model in a diagram with arrows (code not shown).
 
-```{r spider_main_coef, fig.cap="Diagram of the estimated coefficients in the linear model. The green arrow indicates the Intercept term, which goes from zero to the mean of the reference group (here the 'pull' samples). The orange arrow indicates the difference between the push group and the pull group, which is negative in this example. The circles show the individual samples, jittered horizontally to avoid overplotting.", echo=FALSE}
+```{r spider_main_coef, fig.cap="Diagram of the estimated coefficients in the linear model. The green arrow indicates the Intercept term, which goes from zero to the mean of the reference group (here the 'pull' samples). The orange arrow indicates the difference between the push group and the pull group, which is negative in this example. The circles show the individual samples, jittered horizontally to avoid overplotting.", echo=TRUE}
 stripchart(
     split(spider.sub$friction, spider.sub$type),
     vertical=TRUE, method="jitter", pch=1,
@@ -575,7 +575,7 @@ coefs
 
 We can make the same plot as before, with arrows for each of the estimated coefficients in the model (code not shown).
 
-```{r spider_interactions, fig.cap="Diagram of the estimated coefficients in the linear model. As before, the teal-green arrow represents the Intercept, which fits the mean of the reference group (here, the pull samples for leg L1). The purple, pink, and yellow-green arrows represent differences between the three other leg groups and L1. The orange arrow represents the difference between the push and pull samples for all groups.",echo=FALSE}
+```{r spider_interactions, fig.cap="Diagram of the estimated coefficients in the linear model. As before, the teal-green arrow represents the Intercept, which fits the mean of the reference group (here, the pull samples for leg L1). The purple, pink, and yellow-green arrows represent differences between the three other leg groups and L1. The orange arrow represents the difference between the push and pull samples for all groups.",echo=TRUE}
 spider$group <- factor(paste0(spider$leg, spider$type))
 stripchart(split(spider$friction, spider$group),
            vertical=TRUE, pch=1, method="jitter", las=2, xlim=c(0,11), ylim=c(0,2))
@@ -739,7 +739,7 @@ Here is where the plot with arrows really helps us interpret the coefficients. T
 
 Now, as we have eight terms in the model and eight parameters, you can check that the tips of the arrowheads are exactly equal to the group means (code not shown).
 
-```{r spider_interactions2, fig.cap="Diagram of the estimated coefficients in the linear model. In the design with interaction terms, the orange arrow now indicates the push vs. pull difference only for the reference group (L1), while three new arrows (yellow, brown and grey) indicate the additional push vs. pull differences in the non-reference groups (L2, L3 and L4) with respect to the reference group.",echo=FALSE}
+```{r spider_interactions2, fig.cap="Diagram of the estimated coefficients in the linear model. In the design with interaction terms, the orange arrow now indicates the push vs. pull difference only for the reference group (L1), while three new arrows (yellow, brown and grey) indicate the additional push vs. pull differences in the non-reference groups (L2, L3 and L4) with respect to the reference group.",echo=TRUE}
 stripchart(split(spider$friction, spider$group),
            vertical=TRUE, pch=1, method="jitter", las=2, xlim=c(0,11), ylim=c(0,2))
 cols <- hcl.colors(8, "Set 2")
@@ -842,7 +842,7 @@ mu0 <- mean(spider$friction)
 (initial.ss <- sum((spider$friction - mu0)^2))
 ```
 
-```{r echo=FALSE}
+```{r echo=TRUE}
 mu0 <- mean(spider$friction)
 initial.ss <- sum((spider$friction - mu0)^2)
 ```
@@ -872,7 +872,7 @@ ss.by.type <- sapply(s, function(x) {
 (after.type.ss <- sum(ss.by.type))
 ```
 
-```{r echo=FALSE}
+```{r echo=TRUE}
 s <- split(spider$friction, spider$type)
 ss.by.type <- sapply(s, \(x) sum((x-mean(x))^2))
 after.type.ss <- sum(ss.by.type)
@@ -938,7 +938,7 @@ coefs <- coef(fitG)
 
 Now we have eight arrows, one for each group. The arrow tips align directly with the mean of each group:
 
-```{r estimated_group_variables, fig.cap="Diagram of the estimated coefficients in the linear model, with each term representing the mean of a combination of type and leg.",echo=FALSE}
+```{r estimated_group_variables, fig.cap="Diagram of the estimated coefficients in the linear model, with each term representing the mean of a combination of type and leg.",echo=TRUE}
 stripchart(split(spider$friction, spider$group),
            vertical=TRUE, pch=1, method="jitter", las=2, xlim=c(0,11), ylim=c(0,2))
 cols <- hcl.colors(8, "Set 2")
