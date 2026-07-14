@@ -16,7 +16,7 @@ knitr:
     R.options:
       width: 120
 params:
-  answers:    false
+  include_answers: false
   simplified: false
 ---
 
@@ -458,8 +458,8 @@ Using the subset that includes only data on the L1 leg pair (`spider.sub`),
 2. Compute the difference in average friction between "push" and "pull" type legs.
 
 ```{r}
-#| echo: !expr params$answers
-#| eval: !expr params$answers
+#| echo: !expr params$include_answers
+#| eval: !expr params$include_answers
 s <- split(spider.sub$friction, spider.sub$type)
 mean(s[["pull"]])
 mean(s[["push"]]) - mean(s[["pull"]])
@@ -560,8 +560,8 @@ $$ \hat{\boldsymbol{\beta}} = (\mathbf{X}^\top \mathbf{X})^{-1} \mathbf{X}^\top 
 Use the equation above to show that the output of `lm()` corresponds to least squares estimates (hint: in R, the transpose can computated with `t()`, matrices are multiplied with `%*%`, and `solve()` gives the inverse of a matrix).
 
 ```{r}
-#| echo: !expr params$answers
-#| eval: !expr params$answers
+#| echo: !expr params$include_answers
+#| eval: !expr params$include_answers
 Y <- spider$friction
 X <- model.matrix(~ type + leg, data=spider)
 beta.hat <- solve(t(X) %*% X) %*% t(X) %*% Y
@@ -602,8 +602,8 @@ legend("right",names(coefs),fill=cols,cex=.75,bg="white")
 2. Compare these to their corresponding (sum of) coefficient(s).
 
 ```{r}
-#| echo: !expr params$answers
-#| eval: !expr params$answers
+#| echo: !expr params$include_answers
+#| eval: !expr params$include_answers
 s <- split(spider$friction, spider$group)
 # the average of L1-pull legs is the intercept
 c(mean=mean(s[["L1pull"]]), coef=coefs[[1]])
@@ -675,8 +675,8 @@ Convince yourself that
 are the same as `L3vsL2`'s `Contrast` output.
 
 ```{r}
-#| echo: !expr params$answers
-#| eval: !expr params$answers
+#| echo: !expr params$include_answers
+#| eval: !expr params$include_answers
 coefs[4] - coefs[3]
 cT %*% coefs
 ```
@@ -807,8 +807,8 @@ We can't make this contrast using the `contrast` function shown before, but we c
 4. Subtracting which two coefficients (`coefs`) gives the same estimate?
 
 ```{r message=FALSE}
-#| echo: !expr params$answers
-#| eval: !expr params$answers
+#| echo: !expr params$include_answers
+#| eval: !expr params$include_answers
 library(multcomp)
 C <- matrix(c(0,0,0,0,0,-1,1,0), 1)
 L3vsL2interaction <- glht(fitX, linfct=C)
@@ -836,8 +836,8 @@ The first line tells us that adding a variable `type` (push or pull) to the desi
 Compute the original sum of squares of the model with just an intercept: $\sum_i(y_i-\hat y)^2$ where $\hat y$ is the average (observed) friction, and $i=1,2,\dots$ enumerates observations; assign your result to a variable called `initial.ss`.
 
 ```{r}
-#| echo: !expr params$answers
-#| eval: !expr params$answers
+#| echo: !expr params$include_answers
+#| eval: !expr params$include_answers
 mu0 <- mean(spider$friction)
 (initial.ss <- sum((spider$friction - mu0)^2))
 ```
@@ -859,8 +859,8 @@ Ccompute the sum of squared residuals for the model with only the type informati
 2. Sum these across types, and assign your result to a variable called `after.type.ss`.
 
 ```{r}
-#| echo: !expr params$answers
-#| eval: !expr params$answers
+#| echo: !expr params$include_answers
+#| eval: !expr params$include_answers
 # split observed 'friction' by 'type'
 s <- split(spider$friction, spider$type)
 # compute sum of squared residuals for each 'type'
