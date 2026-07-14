@@ -4,6 +4,7 @@ author: "Robert Gentleman"
 format:
   revealjs:
     theme: [simple, ./custom.scss]
+    slide-number: true
 ---
 
 ```{r}
@@ -946,3 +947,15 @@ lower incomes.
 
 - Consequently, a naive regression model may lead to an overestimate of the
 negative health effects of fast food. 
+
+## Collider Bias
+
+- when the selection process introduces a correlation when there is not one in the population
+
+- Mary wants to find a boyfriend.  But she has high standards and he must be either good looking or he must be smart
+
+- She then notices that the smart boys are not that good looking and the good looking boys are not that smart.
+
+- this happens in many situations - especially for example when studying diseases in hospitals
+
+- being in hospital for something means that you probably have that disease, but not others
