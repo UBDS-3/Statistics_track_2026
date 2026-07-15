@@ -1,0 +1,213 @@
+---
+title: "nibbles on PCA by <br> Robert Gentleman"
+format:
+  revealjs:
+    scrollable: true
+    transition: fade
+    slide-number: c/t
+    show-slide-number: all
+execute:
+  echo: true
+  cache: true
+  message: false
+  warning: false
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(cache.lazy=FALSE)
+```
+
+## base R plotting in 1961: <br> The ZUSE plotter Z64
+
+![](https://www.researchgate.net/profile/Liss-Werner/publication/328760933/figure/fig2/AS:689916614832132@1541500347361/Automatisches-Zeichengeraet-ZUSE-Z64-flatbed-drawing-machine-Graphomat-Z64-photograph-by.png)
+
+# 1. Principal Component Regression (PCR)
+
+```{r echo=FALSE, cache=FALSE}
+library(scran)
+library(scater)
+library(patchwork)
+```
+
+- has been used to evaluate batch correction.
+- e.g., Almut's `CellMixS` cites `kBet`,    
+  and both use PCR as an evaluation metric.
+- however, the variability attributable to  
+  batch is aggregated across, say, 100 PCs.
+
+# Let's instead...
+
+1. do PCR against clusters.
+2. what can we learn from the PCs?
+
+## A real-life example
+
+Mereu et al. (2020) benchmark of 13 scRNA-seq platforms
+
+![R2 from PCR against batch & cluster, <br> before & after integration](Mereu20.png)
+
+## Getting set up {.smaller}
+
+```{r fig.width=7, fig.height=5}
+#| layout-ncol: 2
+(sce <- readRDS("pbmc4k.rds"))
+plotTSNE(sce, colour_by="Louvain")
+```
+
+## Closer look at PCs {.smaller}
+
+PC1 is essentially a contrast between two subsets of clusters.
+
+```{r fig.width=7, fig.height=5}
+ids <- sce$Louvain
+pcs <- reducedDim(sce, "PCA")
+boxplot(pcs[, 1] ~ ids)
+abline(h=0, col="red")
+```
+
+## PC Regression {.smaller}
+
+```{r}
+fit <- lm(pcs ~ ids)
+summary(fit)[[1]]
+```
+
+## Multiple R-squared across PCs {.smaller}
+
+- here: proportion of the variation in each PC  
+  that can be explained by cluster assignments
+
+```{r fig.width=7, fig.height=5}
+pv <- attr(pcs, "percentVar")
+r2 <- sapply(summary(fit), \(.) .$adj.r.squared)
+plot(pv/max(pv), type="b", xlab="PC", 
+  ylab = "PV (black) / R2 (red)")
+lines(r2, type="b", col="red")
+```
+
+## Closer look at PC4 {.smaller}
+
+What is that set of PC4-high cells?
+
+:::: {layout-ncol=2}
+
+::: {.column}
+
+```{r fig.width=5, fig.height=5}
+plot(pcs[, c(4, 1)], col=ids, asp=1)
+abline(v=0, h=0)
+```
+
+:::
+
+::: {.column}
+
+```{r fig.width=5, fig.height=5}
+ns <- table(ids[pcs[, 4] > 10])
+(k <- names(which.max(ns)))
+es <- logcounts(sce)[, ids == k]
+head(sort(rowSds(es, useNames=TRUE), dec=TRUE), 5)
+```
+Some of these are platelet factors.  
+The first is a sign of platelet activation.
+
+:::
+
+::::
+
+***
+
+```{r fig.width=6, fig.height=4}
+gs <- c("PPBP", "PF4", "GNG11", "HIST1H2AC")
+plotExpression(sce, gs, "Louvain", color_by="Louvain")
+```
+
+## Another example {.smaller}
+
+- no correlation with size factors or zero-fraction
+
+```{r eval=FALSE}
+cor(pcs[, 6], sce$sizeFactor) # 0.053
+cor(pcs[, 6], colMeans(counts(sce) == 0)) # -0.076
+```
+
+- nothing apparent going on with clusters either
+
+```{r fig.width=6, fig.height=4}
+#| layout-ncol: 1
+plot(pcs[, c(1, 6)], col=ids, asp=1)
+```
+
+## Rotation
+
+- rotations = loadings on each of the genes for each PC
+- which genes drive PC6?
+
+```{r}
+rot <- attr(pcs, "rotation")
+head(sort(abs(rot[, 6]), dec=TRUE))
+```
+
+## What does ChatGPT thing? {.smaller}
+
+Do the genes FOS and DUSP1 interact and if so, how?
+
+- FOS interacts with JUN and JUNB to form the AP-1 transcription factor complex,  
+which activates DUSP1 and other genes in the list.
+
+- FOS is an immediate early gene that encodes a transcription factor known as c-Fos.  
+It is typically induced rapidly in response to various extracellular stimuli,  
+such as growth factors, hormones, and stress signals.
+
+Google search: 10.1007/s10911-020-09448-1
+
+> Here, we show that the AP-1 transcription factor components,  
+i.e., JUN, JUNB, FOS, FOSB, in addition to DUSP1, EGR1, NR4A1,  
+IER2 and BTG2, behave as a conserved co-regulated group of  
+genes whose expression is associated to ZFP36 in cancer cells.
+
+## Another real-life example
+
+Kang et al. (2018) PBMCs dataset (control only)
+
+![PC 'spread' by cluster](Kang18.png)
+
+- for each cluster and PC vs. PC1,  
+compute area of a convex hull
+
+***
+
+## Another real-life example
+
+Kang et al. (2018) PBMCs dataset (control only)
+
+![Megakaryocytes](PCs.png)
+
+- large convex hull areas are indicative  
+of clusters being torn apart across PCs
+
+## 2. Isolation Random Forests
+
+- interpretable, easy to run, not too slow.
+- perhaps something useful for outlier detection?
+
+```{r}
+# let's make up a cell...
+ol <- runif(ncol(pcs), -20, 20)
+qcs <- rbind(pcs, ol)
+
+# ...and find it
+library(isotree)
+irf <- isolation.forest(qcs, ndim=NULL, ntrees=100)
+iso <- predict(irf, qcs)
+summary(iso)
+```
+
+***
+
+```{r fig.width=6, fig.height=6}
+#| layout-ncol: 1
+# let's see if we got it:
+pal <- rev(hcl.colors(n <- 100, "Reds"))
+plot(qcs, asp=1, lwd=2, cex=iso, col=pal[cut(iso, n)])
+```
