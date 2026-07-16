@@ -1,10 +1,37 @@
 ---
 title: "Regression Basics"
 author: "Robert Gentleman"
-format:
+subtitle: "UBDS^3"
+date: "14 July 2026"
+format: 
   revealjs:
     theme: [simple, ./custom.scss]
-    slide-number: true
+    smaller: false
+    css: style.css
+    incremental: false
+    scrollable: true
+    transition: fade
+    slide-number: c/t
+    show-slide-number: all
+    embed-resources: true
+    monofont: "Fira Code"
+    include-in-header:
+      text: |
+        <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+        <style>
+        code, pre { font-family: 'Fira Code', monospace; font-variant-ligatures: contextual; }
+        </style>
+html-math-method:
+    method: mathjax
+    url: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+knitr:
+    opts_chunk:
+        out-width: 100%
+        fig-align: center
+        R.options:
+            width: 120
+            scipen: 100
+            digits: 3
 ---
 
 ```{r}
@@ -93,8 +120,8 @@ library(ggplot2)
 - To imitate Galton's analysis, we will create a dataset with the heights of fathers and a randomly selected son of each family:
 
 ```{r, message=FALSE, warning=FALSE, cache = FALSE} 
-library(tidyverse) 
-library(HistData) 
+library("tidyverse") 
+library("HistData") 
 set.seed(1983) 
 galton_heights <- GaltonFamilies |> 
   filter(gender == "male") |> 
@@ -732,7 +759,7 @@ data("Boston")
 library(DT)
 #| label: bostonanno
 #| echo: false
-bostonanno = read.table(textConnection("
+bostonanno <- read.table(textConnection("
 varname|meaning
 zn|proportion of residential land zoned for lots over 25,000 sq.ft
 indus|proportion of non-retail business acres per town
@@ -766,7 +793,7 @@ datatable(
 
 ```{r}
 #| echo: true
-fit1 = lm(medv ~ dis + rm, data = Boston)
+fit1 <- lm(medv ~ dis + rm, data = Boston)
 summary(fit1)
 ```
 
@@ -832,7 +859,7 @@ GGally::ggpairs(
 ```{r}
 #| label: ii2
 #| echo: true
-fit1I = lm(medv ~ dis + rm + lstat + rm*lstat, data = Boston)
+fit1I <- lm(medv ~ dis + rm + lstat + rm*lstat, data = Boston)
 summary(fit1I)
 
 ```
@@ -847,16 +874,16 @@ summary(fit1I)
 ```{r}
 #| label: colinear-2
 #| echo: true
-#fit1 = lm(medv ~ dis + rm, data = Boston)
+#fit1 <- lm(medv ~ dis + rm, data = Boston)
 coef(fit1)
-fit2 = lm(medv ~ dis + rm + nox, data = Boston)
+fit2 <- lm(medv ~ dis + rm + nox, data = Boston)
 coef(fit2)
 ```
 
 ## Collinearity
 
 ```{r}
-fit3 = lm(medv ~ dis + rm + rad + tax, data = Boston)
+fit3 <- lm(medv ~ dis + rm + rad + tax, data = Boston)
 summary(fit3)
 
 ```
@@ -865,7 +892,7 @@ summary(fit3)
 - RAD – TAX have a correlation of about 0.9
 
 ```{r}
-fit4 = lm(medv ~ dis + rm + rad, data = Boston)
+fit4 <- lm(medv ~ dis + rm + rad, data = Boston)
 summary(fit4)
 ```
 
