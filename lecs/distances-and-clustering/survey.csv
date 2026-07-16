@@ -1,0 +1,22 @@
+Age (years),Height (cm),BSc/MSc/PhD/Other,Dog or Cat?,Pizza or pasta?,Python or R?,Favorite number (1-100),"Natural hair color (blonde, brown, black)"
+32,157,Other,Dog,Pasta,R,8,brown
+32,169,Other ,Cat,Pasta,R,12,blonde
+19,170,BSc,Cat,Pizza,Python,12,brown
+17,187,Other,Cat,Pasta,R,13,brown
+24,177,PhD,Dog,Pizza,Python,99,Brown
+19,161,BSc,Cat,Pasta,Python,13,Brown
+21,170,Msc,Dog,Pizza,Python,2,Brown
+18,172,BSc,Cat,Pizza,R,7,Brown
+23,170,MSc,Cat,Pasta,Python,13,Black
+22,174,MSc,Dog,Pizza,R,73,brown
+19,166,BSc,Cat,Pizza,Python,7,Brown
+33,175,MSc,,,,,
+27,170,PhD,cat,pizza,python,2,blonde
+16,162,Other,Cat,Pizza,Python,8,Blonde
+18,162,BSc,cat,pizza,python,37,brown
+22,156,BSc ,Dog,Pizza,R,0,Brown
+18,174,BSc,Cat,pizza,python,56,brown
+21,160,BSc,Cat,Pizza,Python,67,Brown
+20,158,BSc,Cat,Pizza,Python,15,Brown 
+20,171,BSc,Cat,Pizza,Python,7,Brown
+21,180,BSc,,,,,
