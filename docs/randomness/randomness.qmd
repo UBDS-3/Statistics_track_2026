@@ -4,24 +4,19 @@ author: "Michael Love"
 date: "July 2026"
 license: "CC-BY"
 format: 
-  live-html:
+  html:
     toc: true 
     code-fold: false
     code-tools: true
+    embed-resources: true
     highlight-style: github
     code-line-numbers: false 
-webr:
-  packages:
-    - palmerpenguins
 params:
   skip_execution: false
   skip_answers: true
 ---
 
-{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
-{{< include ./_extensions/r-wasm/live/_gradethis.qmd >}}
-
-```{webr}
+```{r}
 #| label: initialize
 #| echo: FALSE
 knitr::opts_chunk$set(echo = TRUE, fig.width=7, fig.height=5) 
@@ -57,7 +52,7 @@ I use the word "estimate" to refer to a particular computed value from data. An 
 
 The [palmerpenguins](https://allisonhorst.github.io/palmerpenguins/) package provides data for 344 penguins across three species collected at Palmer Station, Antarctica. Details and credit can be found at that link. We focus here on the body mass of Gentoo penguins as a stand-in for a real biological population:
 
-```{webr}
+```{r}
 suppressPackageStartupMessages({
 
   library(palmerpenguins)
@@ -76,7 +71,7 @@ length(gentoo_mass)
 
 Use the slider to choose a sample size `n`. Each time the slider moves, a new random sample of `n` penguins is drawn from the Gentoo population and the sample mean is computed. The red line marks the sample mean; the dashed green line marks the true population mean.
 
-```{webr}
+```{r}
 #| echo: false
 plot_penguin_sample <- function(population, sample_mass, hd = FALSE) {
   n <- length(sample_mass)
@@ -126,8 +121,9 @@ viewof seed_btn = {
 }
 ```
 
-```{webr}
+```{r}
 #| warning: false
+#| eval: false
 #| input:
 #|   - n_slider
 #|   - hd
@@ -171,7 +167,7 @@ The mean and median are both estimators for the center of a distribution, but th
 
 Below we sample from a log-normal distribution with parameters `meanlog = 0` and `sdlog = 1`. The true mean is $e^{0.5} \approx 1.65$ and the true median is $e^0 = 1$. The sample mean and median reflect this difference:
 
-```{webr}
+```{r}
 #| echo: false
 plot_mean_median <- function(x) {
   n <- length(x)
@@ -214,8 +210,9 @@ viewof seed_skew = {
 }
 ```
 
-```{webr}
+```{r}
 #| warning: false
+#| eval: false
 #| input:
 #|   - n_skew
 #|   - seed_skew
@@ -407,7 +404,7 @@ We need to use Calculus to compute a finite amount from an infinite set of value
 
 While $P$ methodically collects all datasets from $\Omega$, surveying all the possibilities, random datasets are sampled in real life proportional to their probability. 
 
-```{webr}
+```{r}
 #| echo: false
 #| fig-width: 4
 #| fig-height: 3
@@ -481,7 +478,7 @@ viewof seed_meta_btn = {
 }
 ```
 
-```{webr}
+```{r}
 #| echo: false
 plot_forest_meta <- function(population, sample_sizes, seed_val, show_ivw = FALSE) {
   set.seed(seed_val)
@@ -560,8 +557,9 @@ plot_forest_meta <- function(population, sample_sizes, seed_val, show_ivw = FALS
 }
 ```
 
-```{webr}
+```{r}
 #| warning: false
+#| eval: false
 #| input:
 #|   - seed_meta_btn
 sample_sizes_meta <- c(5, 10, 15, 20, 50, 100)
@@ -590,7 +588,7 @@ The data variance is present here, absorbed into the weights. Expanding $w_i = 1
 
 The code below applies IVW to one fixed set of draws, so we can see the weights and combined estimates concretely:
 
-```{webr}
+```{r}
 set.seed(5)
 sample_sizes_meta <- c(5, 10, 15, 20, 50, 100)
 meta_df <- do.call(rbind, # collapse into one data.frame
@@ -617,8 +615,9 @@ viewof seed_ivw_btn = {
 }
 ```
 
-```{webr}
+```{r}
 #| warning: false
+#| eval: false
 #| input:
 #|   - seed_ivw_btn
 sample_sizes_meta <- c(5, 10, 15, 20, 50, 100)
@@ -633,7 +632,7 @@ First review these two basic R functions, `lapply` and `sapply`.
 
 `lapply` iterates over a list and gives back a list. Hence we get back results in the positions `$a`, `$b`, `$c` separately after calling `lapply`:
 
-```{webr}
+```{r}
 my_list <- list(a = 1, b = 1:5, c = 1:10)
 my_list
 lapply(X = my_list, FUN = \(x) 2 * x) # iterate over list
@@ -645,27 +644,27 @@ We can leave off the argument names `X` and `FUN`.
 
 `sapply` reduces to a vector or matrix depending on the size of the output of `FUN`:
 
-```{webr}
+```{r}
 sapply(my_list, \(x) sum(x))
 sapply(my_list, \(x) c(sum = sum(x), prod = prod(x)))
 ```
 
 Note that, for the first line, we can reduce the code to just:
 
-```{webr}
+```{r}
 sapply(my_list, sum)
 ```
 
 Also we will use the function `replicate`, which is helpful for generating many simulations:
 
-```{webr}
+```{r}
 set.seed(3)
 replicate(n=5, expr = { rnorm(n=1) * 10 + 3 })
 ```
 
 The above is just for demonstration, we could get the same result with:
 
-```{webr}
+```{r}
 set.seed(3)
 rnorm(n=5, mean=3, sd=10)
 ```
@@ -678,7 +677,7 @@ Ok, now use R's `rnorm()` function to simulate random samples from a Normal dist
 
 Consider estimating the mean of the distribution.
 
-```{webr}
+```{r}
 set.seed(5)
 # these 'n' represent sample sizes
 n_values <- c(5, 10, 50, 100, 1000)
@@ -709,8 +708,9 @@ Use `sapply` to estimate the sample mean for each sample size in `n_values`, dra
 The first argument to `sapply` is the vector to iterate over. Each element is passed as `n` to the anonymous function; use it inside `rnorm()` and wrap the result with `mean()`.
 :::
 
-```{webr}
+```{r}
 #| exercise: sapply_ex
+#| eval: false
 set.seed(5)
 est_means <- sapply(______, \(n) {
   ______( rnorm(n, mean = ______, sd = ______) )
@@ -722,7 +722,7 @@ data.frame(n = n_values, est_means)
 
 #### Solution
 
-```{webr}
+```{r}
 #| exercise: sapply_ex
 #| solution: true
 set.seed(5)
@@ -734,9 +734,10 @@ data.frame(n = n_values, est_means)
 
 :::
 
-```{webr}
+```{r}
 #| exercise: sapply_ex
 #| check: true
+#| eval: false
 gradethis::grade_this_code()
 ```
 
@@ -746,7 +747,7 @@ Now we will start running more than one simulation at a time. This will allow us
 
 Let's start by writing a function that has 4 arguments: the sample size `n`, the number of times to repeat the simulation `nreps`, and the mean and standard deviation of the data generating process, i.e. of the Normal distribution we use to make the data.
 
-```{webr}
+```{r}
 simulate_estimating_means <- \(n, nreps, mean, sd) {
   replicate(nreps, {
     mean( rnorm(n=n, mean=mean, sd=sd) )
@@ -756,7 +757,7 @@ simulate_estimating_means <- \(n, nreps, mean, sd) {
 
 For example, run four simulations, each one an experiment of size n=100:
 
-```{webr}
+```{r}
 simulate_estimating_means(n = 100, nreps = 4, mean = -3, sd = 1)
 ```
 
@@ -764,7 +765,7 @@ It's more useful if we do this inside of an `lapply`. That will allow us to chan
 
 Below we run 1000 simulations, per unique value of `n`, the sample size.
 
-```{webr}
+```{r}
 n_values <- c(5, 10, 50, 100, 1000)
 true_mean <- 5
 true_sd <- 1
@@ -786,7 +787,7 @@ A R syntax question: why do we need to put the last three arguments above?
 
 We get back from `lapply` a list of estimated means. Let's peek into these results:
 
-```{webr}
+```{r}
 length(est_means)
 head(est_means[[1]])
 head(est_means[[5]])
@@ -796,7 +797,7 @@ Let's give this list some names, which will help with plotting.
 
 We can see the spread with a boxplot. Setting `range=0` includes all the data in the whiskers (otherwise, some data far from the interquartile range are drawn as circles).
 
-```{webr box_means_by_n}
+```{r box_means_by_n}
 names(est_means) <- paste0("n=", n_values)
 boxplot(
   est_means,
@@ -808,7 +809,7 @@ boxplot(
 
 To emphasize the difference between these sample sizes, and the precision of our estimates, focus on n=5 (red) and n=100 (blue). The estimates are much closer to the true value with 20x higher sample size.
 
-```{webr}
+```{r}
 plot(
   density(est_means[["n=5"]]),
   col = "firebrick",
@@ -828,7 +829,7 @@ abline(v=true_mean, lwd=2, lty=2, col="grey")
 
 Let's look at the _mean_ and _variance_ of our _estimates_. Note for a moment that this is one level above computing the _mean_ and _variance_ of the _data_. First start with the mean of the estimates:
 
-```{webr}
+```{r}
 (mean_of_means <- sapply(est_means, mean))
 ```
 
@@ -836,14 +837,14 @@ We would hope the mean of the estimates is close to the true value. In fact, we 
 
 However, their variances are pretty different, and do not converge to the same value if we increase `nreps`:
 
-```{webr}
+```{r}
 var_of_means <- sapply(est_means, var)
 round(var_of_means, 4)
 ```
 
 We might expect, the variability of the estimates is highest when we have few samples. Let's take a look at this on the log scale. We plot the variances in black, and the variances we expect from statistical theory in blue. The relationship for this data is simply $n^{-1}$.
 
-```{webr plot_var_means_by_n}
+```{r plot_var_means_by_n}
 plot(n_values, var_of_means, type="b", log="xy", main="variance over n")
 # theoretical variance:
 points(n_values, 1/n_values, type="b", col="blue")
@@ -853,7 +854,7 @@ We can confirm that this means the standard deviation is decreasing by $n^{-1/2}
 
 This means that if we want to decrease the standard deviation of our estimate by 2 fold, we need to increase the sample size by 4 fold.
 
-```{webr plot_sd_means_by_n}
+```{r plot_sd_means_by_n}
 plot(n_values, sqrt(var_of_means), type="b", log="xy", main="SD over n")
 # theoretical variance:
 points(n_values, 1/sqrt(n_values), type="b", col="blue")
@@ -861,7 +862,7 @@ points(n_values, 1/sqrt(n_values), type="b", col="blue")
 
 ## Session info
 
-```{webr}
+```{r}
 sessionInfo()
 ```
 
